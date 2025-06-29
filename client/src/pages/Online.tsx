@@ -12,6 +12,14 @@ function Online() {
 		avatar: "/placeholder.svg",
 	};
 
+
+
+
+
+
+
+
+
 	return (
 		<div>
 			<div className="gradient min-h-screen bg-gradient-to-br from-background via-surface-light to-background dark:from-surface-darker dark:via-surface-dark dark:to-surface-darker">
