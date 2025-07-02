@@ -82,6 +82,7 @@ function BoardSquare(props: BoardSquareProps) {
   const handleCloseDialog = () => {
     setIsPromotion((prev) => ({ ...prev!, status: false }));
   };
+
   return (
     <div
       onDragOver={(e) => {

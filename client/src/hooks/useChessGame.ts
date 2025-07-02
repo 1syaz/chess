@@ -69,29 +69,29 @@ export function useChessGame(
     return false;
   };
 
-  const makeRandomMove = () => {
-    if (game.turn() === playerColor) return;
-    const moves = game.moves({});
-
-    // game over
-    if (moves.length === 0) return;
-    const move = game.move(moves[Math.floor(Math.random() * moves.length)]);
-    setBoard(game.board());
-
-    if (move.captured) {
-      handleCheck(playerColor, true);
-
-      const isInsufficientMaterial = game.isInsufficientMaterial();
-      if (isInsufficientMaterial) {
-        // playSound("notify");
-        notifySound.play();
-        setGameStatus((prev) => ({ ...prev, isInsufficientMaterial }));
-        return;
-      }
-    } else {
-      handleCheck(playerColor);
-    }
-  };
+  // const makeRandomMove = () => {
+  // 	if (game.turn() === playerColor) return;
+  // 	const moves = game.moves({});
+  //
+  // 	// game over
+  // 	if (moves.length === 0) return;
+  // 	const move = game.move(moves[Math.floor(Math.random() * moves.length)]);
+  // 	setBoard(game.board());
+  //
+  // 	if (move.captured) {
+  // 		handleCheck(playerColor, true);
+  //
+  // 		const isInsufficientMaterial = game.isInsufficientMaterial();
+  // 		if (isInsufficientMaterial) {
+  // 			// playSound("notify");
+  // 			notifySound.play();
+  // 			setGameStatus((prev) => ({ ...prev, isInsufficientMaterial }));
+  // 			return;
+  // 		}
+  // 	} else {
+  // 		handleCheck(playerColor);
+  // 	}
+  // };
 
   const handlePromotion = (
     from: Square | string,
@@ -107,14 +107,14 @@ export function useChessGame(
     });
 
     setIsPromotion((prev) => ({ ...prev!, status: false }));
-    setBoard(game.board());
     setSelectedSquare(null);
     setHoveredSquare(null);
     setPossibleMoves([]);
     const color = game.turn();
     handleCheck(color);
     handleEndGame();
-    // setTimeout(makeRandomMove, 500);
+    setBoard(game.board());
+    setPlayerColor((prev) => (prev === "w" ? "b" : "w"));
   };
 
   const handlePromotionSelect = (promotionPiece: string) => {
@@ -193,7 +193,6 @@ export function useChessGame(
     promoteTo?: string,
   ) => {
     if (playerColor === game.turn() && playerColor === color) {
-      console.log("SelectedSQuare,", selectedSquare);
       if (!selectedSquare) {
         // select piece
         if (!piece) return;
@@ -293,11 +292,12 @@ export function useChessGame(
 
     if (!possibleMoves.find((m) => m.square === to)) return;
 
-    const isPromotionMove = getPromotion(from as Square, to as Square);
+    const isPromotion = getPromotion(from as Square, to as Square);
 
     // handle promotion
-    if (isPromotionMove) {
+    if (isPromotion) {
       handlePromotion(from, to);
+      return;
     }
     const move = game.move({ from, to });
     setPlayerColor((prev) => (prev === "w" ? "b" : "w"));
