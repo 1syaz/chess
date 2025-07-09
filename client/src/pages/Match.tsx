@@ -1,68 +1,84 @@
-import ChessBoardSection from "@/components/chess/ChessBoardSection";
+import { useAppDispatch, useAppSelector } from "@/app/hooks";
+import ChessBoard from "@/components/chess/ChessBoard";
 import PlayerInfo from "@/components/chess/PlayerInfo";
+import { startGame } from "@/features/game/gameSlice";
 import { useChessGame } from "@/hooks/useChessGame";
-import { useState } from "react";
+import { Chess } from "chess.js";
+import { useEffect, useRef, useState } from "react";
 
 function Match() {
-  // TODO
-  const [gameStatus, setGameStatus] = useState<{
-    isCheckmate: boolean;
-    isStalemate: boolean;
-    isDraw: boolean;
-    isInsufficientMaterial: boolean;
-  }>({
-    isCheckmate: false,
-    isStalemate: false,
-    isDraw: false,
-    isInsufficientMaterial: false,
-  });
+	const dispatch = useAppDispatch();
+	const { fen, playerColor, board } = useAppSelector((state) => state.game);
 
-  const [playerColor, setPlayerColor] = useState<"w" | "b">("w");
-  const {
-    board,
-    game,
-    isChecked,
-    draggedSquare,
-    hoveredSquare,
-    possibleMoves,
-    isPromotion,
-    handleClickMove,
-    handleDragDrop,
-    setBoard,
-    setHoveredSquare,
-    handleDragPiece,
-    setIsPromotion,
-    handlePromotionSelect,
-    getValidMovesForSquare,
-  } = useChessGame(playerColor, setGameStatus, setPlayerColor);
+	const gameRef = useRef<Chess>(new Chess(fen));
 
-  return (
-    <div className="gradient min-h-screen w-full text-white flex items-center justify-center p-4">
-      <div className="flex flex-col-reverse lg:flex-row items-start justify-center gap-3">
-        <ChessBoardSection
-          gameStatus={gameStatus}
-          board={board}
-          game={game}
-          isChecked={isChecked}
-          draggedSquare={draggedSquare}
-          hoveredSquare={hoveredSquare}
-          possibleMoves={possibleMoves}
-          isPromotion={isPromotion}
-          playerColor={playerColor}
-          handleClickMove={handleClickMove}
-          handleDragDrop={handleDragDrop}
-          setBoard={setBoard}
-          setHoveredSquare={setHoveredSquare}
-          handleDragPiece={handleDragPiece}
-          setIsPromotion={setIsPromotion}
-          handlePromotionSelect={handlePromotionSelect}
-          getValidMovesForSquare={getValidMovesForSquare}
-        />
+	const [gameOver, setGameOver] = useState<{
+		isGameOver: boolean;
+		message: string;
+	}>({
+		isGameOver: false,
+		message: "",
+	});
 
-        <PlayerInfo gameStatus={gameStatus} />
-      </div>
-    </div>
-  );
+	useEffect(() => {
+		dispatch(
+			startGame({ board: gameRef.current.board(), playerColor: "w" })
+		);
+	}, [dispatch]);
+
+	// TEMP
+	const handleGameUpdate = (game: Chess) => {
+		gameRef.current = game;
+	};
+
+	const {
+		isChecked,
+		draggedSquare,
+		hoveredSquare,
+		possibleMoves,
+		isPromotion,
+		handleClickMove,
+		handleDragDrop,
+		setHoveredSquare,
+		handleDragPiece,
+		setIsPromotion,
+		handlePromotionSelect,
+		getValidMovesForSquare,
+	} = useChessGame(setGameOver, gameRef.current);
+
+	// TODO update
+	if (!board || !playerColor) {
+		return <div>Loading game...</div>;
+	}
+
+	return (
+		<div className="gradient min-h-screen w-full text-white flex items-center justify-center p-4">
+			<div className="flex flex-col-reverse lg:flex-row items-start justify-center gap-3">
+				<ChessBoard
+					gameOver={gameOver}
+					game={gameRef.current}
+					isChecked={isChecked}
+					draggedSquare={draggedSquare}
+					hoveredSquare={hoveredSquare}
+					possibleMoves={possibleMoves}
+					isPromotion={isPromotion}
+					handleClickMove={handleClickMove}
+					handleDragDrop={handleDragDrop}
+					setHoveredSquare={setHoveredSquare}
+					handleDragPiece={handleDragPiece}
+					setIsPromotion={setIsPromotion}
+					handlePromotionSelect={handlePromotionSelect}
+					getValidMovesForSquare={getValidMovesForSquare}
+				/>
+				<PlayerInfo
+					updateGame={handleGameUpdate}
+					game={gameRef.current}
+					gameOver={gameOver}
+					setGameOver={setGameOver}
+				/>
+			</div>
+		</div>
+	);
 }
 
 export default Match;

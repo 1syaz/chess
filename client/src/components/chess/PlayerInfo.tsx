@@ -1,15 +1,56 @@
+import { Chess } from "chess.js";
 import GameButtons from "./GameButtons";
+import notifyAudio from "@/assets/sounds/GenericNotify.mp3";
 import GameOverButtons from "./GameOverButtons";
+import type { Dispatch, SetStateAction } from "react";
+import { useAppDispatch } from "@/app/hooks";
+import { setBoard } from "@/features/game/gameSlice";
 
 interface PlayerInfoProps {
-	gameStatus: {
-		isCheckmate: boolean;
-		isStalemate: boolean;
-		isDraw: boolean;
+	updateGame: (game: Chess) => void;
+	game: Chess;
+	gameOver: {
+		isGameOver: boolean;
+		message: string;
 	};
+	setGameOver: Dispatch<
+		SetStateAction<{ isGameOver: boolean; message: string }>
+	>;
 }
 
-function PlayerInfo({ gameStatus }: PlayerInfoProps) {
+function PlayerInfo({
+	updateGame,
+	game: oldGame,
+	gameOver,
+	setGameOver,
+}: PlayerInfoProps) {
+	const dispatch = useAppDispatch();
+	const notifySound = new Audio(notifyAudio);
+
+	const handleResign = () => {
+		const newGame = new Chess();
+		const turn = oldGame.turn();
+
+		notifySound.play();
+		updateGame(newGame);
+		setGameOver({
+			isGameOver: true,
+			message: `${turn === "w" ? "Black" : "White"} wins — ${
+				turn === "w" ? "White" : "Black"
+			} resigned.`,
+		});
+		dispatch(setBoard(newGame.board()));
+		localStorage.removeItem("gameState");
+	};
+
+	const handleDraw = () => {
+		console.log("draw");
+	};
+
+	const handleTakeback = () => {
+		console.log("takeback");
+	};
+
 	return (
 		<section className="flex flex-col w-full  gap-4 h-fit lg:max-w-[300px]">
 			<div className="flex flex-row lg:flex-col justify-between  gap-4 border bg-custom-grey border-white/20 rounded-lg p-4">
@@ -52,7 +93,15 @@ function PlayerInfo({ gameStatus }: PlayerInfoProps) {
 			</div>
 
 			{/* Game Controls */}
-			{!gameStatus.isCheckmate ? <GameButtons /> : <GameOverButtons />}
+			{!gameOver.isGameOver ? (
+				<GameButtons
+					handleResign={handleResign}
+					handleDraw={handleDraw}
+					handleTakeback={handleTakeback}
+				/>
+			) : (
+				<GameOverButtons />
+			)}
 		</section>
 	);
 }
