@@ -93,6 +93,7 @@ function BoardSquare(props: BoardSquareProps) {
 			onDragLeave={() => setHoveredSquare(null)}
 			onDrop={() => handleDragDropPieces(moveNotation)}
 			onClick={() => {
+				console.log((square?.color as Color) ?? playerColor);
 				handleClickMove(
 					moveNotation,
 					square?.type ?? "",
@@ -131,13 +132,14 @@ function BoardSquare(props: BoardSquareProps) {
 				{/* Piece */}
 				{square?.color && square.type && (
 					<img
-						onClick={() =>
+						onClick={() => {
+							console.log(square);
 							handleClickMove(
 								moveNotation,
 								square.type,
 								square.color
-							)
-						}
+							);
+						}}
 						onDragStart={() => {
 							getValidMovesForSquare(moveNotation);
 							handleDragPiece(

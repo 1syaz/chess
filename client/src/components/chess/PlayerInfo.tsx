@@ -4,7 +4,7 @@ import notifyAudio from "@/assets/sounds/GenericNotify.mp3";
 import GameOverButtons from "./GameOverButtons";
 import type { Dispatch, SetStateAction } from "react";
 import { useAppDispatch } from "@/app/hooks";
-import { setBoard } from "@/features/game/gameSlice";
+import { resetGame, setBoard } from "@/features/game/gameSlice";
 
 interface PlayerInfoProps {
 	updateGame: (game: Chess) => void;
@@ -28,19 +28,17 @@ function PlayerInfo({
 	const notifySound = new Audio(notifyAudio);
 
 	const handleResign = () => {
-		const newGame = new Chess();
 		const turn = oldGame.turn();
-
 		notifySound.play();
-		updateGame(newGame);
-		setGameOver({
-			isGameOver: true,
-			message: `${turn === "w" ? "Black" : "White"} wins — ${
-				turn === "w" ? "White" : "Black"
-			} resigned.`,
-		});
-		dispatch(setBoard(newGame.board()));
-		localStorage.removeItem("gameState");
+
+		const message = `${turn === "w" ? "Black" : "White"} wins — ${
+			turn === "w" ? "White" : "Black"
+		} resigned.`;
+		setGameOver({ isGameOver: true, message });
+		localStorage.setItem(
+			"gameOver",
+			JSON.stringify({ isGameOver: true, message })
+		);
 	};
 
 	const handleDraw = () => {
@@ -49,6 +47,21 @@ function PlayerInfo({
 
 	const handleTakeback = () => {
 		console.log("takeback");
+	};
+
+	const handlePlayAgain = () => {
+		notifySound.play();
+		const newGame = new Chess();
+		const turn = newGame.turn();
+		updateGame(newGame);
+		dispatch(resetGame(turn));
+		dispatch(setBoard(newGame.board()));
+		setGameOver({
+			isGameOver: false,
+			message: "",
+		});
+		localStorage.removeItem("gameOver");
+		localStorage.removeItem("gameState");
 	};
 
 	return (
@@ -100,7 +113,7 @@ function PlayerInfo({
 					handleTakeback={handleTakeback}
 				/>
 			) : (
-				<GameOverButtons />
+				<GameOverButtons handlePlayAgain={handlePlayAgain} />
 			)}
 		</section>
 	);

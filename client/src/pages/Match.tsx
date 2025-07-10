@@ -2,7 +2,7 @@ import { useAppDispatch, useAppSelector } from "@/app/hooks";
 import ChessBoard from "@/components/chess/ChessBoard";
 import PlayerInfo from "@/components/chess/PlayerInfo";
 import { startGame } from "@/features/game/gameSlice";
-import { useChessGame } from "@/hooks/useChessGame";
+import { useChessLogic } from "@/hooks/useChessLogic";
 import { Chess } from "chess.js";
 import { useEffect, useRef, useState } from "react";
 
@@ -15,10 +15,14 @@ function Match() {
 	const [gameOver, setGameOver] = useState<{
 		isGameOver: boolean;
 		message: string;
-	}>({
-		isGameOver: false,
-		message: "",
-	});
+	}>(
+		localStorage.getItem("gameOver")
+			? JSON.parse(localStorage.getItem("gameOver")!)
+			: {
+					isGameOver: false,
+					message: "",
+			  }
+	);
 
 	useEffect(() => {
 		dispatch(
@@ -26,7 +30,6 @@ function Match() {
 		);
 	}, [dispatch]);
 
-	// TEMP
 	const handleGameUpdate = (game: Chess) => {
 		gameRef.current = game;
 	};
@@ -44,7 +47,7 @@ function Match() {
 		setIsPromotion,
 		handlePromotionSelect,
 		getValidMovesForSquare,
-	} = useChessGame(setGameOver, gameRef.current);
+	} = useChessLogic(setGameOver, gameRef.current);
 
 	// TODO update
 	if (!board || !playerColor) {

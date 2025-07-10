@@ -20,7 +20,7 @@ const initialState: GameState = {
 	gameStatus: { isGameOver: false, message: "" },
 	playerColor: null,
 	fen:
-		localStorage.getItem("gameFen") ??
+		localStorage.getItem("gameState") ??
 		"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
 };
 
@@ -55,7 +55,7 @@ export const gameSlice = createSlice({
 		) => {
 			state.board = action.payload;
 		},
-		resetGame: (state) => {
+		resetGame: (state, action: PayloadAction<Color>) => {
 			state.board = null;
 			state.fen =
 				"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -63,7 +63,7 @@ export const gameSlice = createSlice({
 				isGameOver: false,
 				message: "",
 			};
-			state.playerColor = null;
+			state.playerColor = action.payload;
 		},
 		startGame: (
 			state,
@@ -77,16 +77,20 @@ export const gameSlice = createSlice({
 				playerColor: Color;
 			}>
 		) => {
-			console.log("START GAME DISPATCHED", action.payload);
-
 			state.board = action.payload.board;
 			state.playerColor = action.payload.playerColor;
 		},
 	},
 });
 
-export const { setGameStatus, setFen, setPlayerColor, setBoard, startGame } =
-	gameSlice.actions;
+export const {
+	setGameStatus,
+	setFen,
+	setPlayerColor,
+	setBoard,
+	startGame,
+	resetGame,
+} = gameSlice.actions;
 
 // selector
 export const selectFen = (state: RootState) => state.game.fen;

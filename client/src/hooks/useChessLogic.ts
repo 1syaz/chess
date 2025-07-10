@@ -10,13 +10,12 @@ import { useRef, useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
 import { setBoard, setPlayerColor } from "@/features/game/gameSlice";
 
-// audios
 import moveAudio from "@/assets/sounds/Move.mp3";
 import captureAudio from "@/assets/sounds/Capture.mp3";
 import notifyAudio from "@/assets/sounds/GenericNotify.mp3";
 import checkAudio from "@/assets/sounds/Check.mp3";
 
-export function useChessGame(
+export function useChessLogic(
 	setGameOver: React.Dispatch<
 		React.SetStateAction<{
 			isGameOver: boolean;
@@ -46,11 +45,35 @@ export function useChessGame(
 	>([]);
 	const dispatch = useAppDispatch();
 
-	// game audios
-	const movePieceAudio = new Audio(moveAudio);
-	const capturePieceAudio = new Audio(captureAudio);
-	const notifySound = new Audio(notifyAudio);
-	const checkSound = new Audio(checkAudio);
+	// === game audios
+	const movePieceAudio = useRef(new Audio(moveAudio));
+	const capturePieceAudio = useRef(new Audio(captureAudio));
+	const notifySound = useRef(new Audio(notifyAudio));
+	const checkSound = useRef(new Audio(checkAudio));
+
+	// === utils
+	const finalizeMove = (capture = false) => {
+		const color = game.turn();
+		dispatch(setPlayerColor(playerColor === "w" ? "b" : "w"));
+		dispatch(setBoard(game.board()));
+		setSelectedSquare(null);
+		setHoveredSquare(null);
+		setPossibleMoves([]);
+		handleEndGame();
+		saveGameInLocalStorage(game.fen());
+		handleCheck(color, capture);
+
+		// handle insufficient material
+		const isInsufficientMaterial = game.isInsufficientMaterial();
+		if (isInsufficientMaterial) {
+			notifySound.current.play();
+			setGameOver({
+				isGameOver: true,
+				message: "Draw! Insufficient material",
+			});
+			localStorage.setItem("gameover", "true");
+		}
+	};
 
 	const getPromotion = (from: Square, to: Square) => {
 		for (const move of game.moves({ verbose: true })) {
@@ -66,6 +89,7 @@ export function useChessGame(
 		}
 		return false;
 	};
+
 	const saveGameInLocalStorage = (fen: string) => {
 		localStorage.setItem("gameState", fen);
 	};
@@ -84,15 +108,7 @@ export function useChessGame(
 		});
 
 		setIsPromotion((prev) => ({ ...prev!, status: false }));
-		setSelectedSquare(null);
-		setHoveredSquare(null);
-		setPossibleMoves([]);
-		const color = game.turn();
-		handleCheck(color);
-		handleEndGame();
-		dispatch(setBoard(game.board()));
-		dispatch(setPlayerColor(playerColor === "w" ? "b" : "w"));
-		saveGameInLocalStorage(game.fen());
+		finalizeMove();
 	};
 
 	const handlePromotionSelect = (promotionPiece: string) => {
@@ -127,7 +143,7 @@ export function useChessGame(
 		const isCheckmate = game.isCheckmate();
 
 		if (isCheckmate) {
-			notifySound.play();
+			notifySound.current.play();
 			const turn = game.turn();
 			setGameOver({
 				isGameOver: true,
@@ -140,7 +156,7 @@ export function useChessGame(
 
 		if (isStalemate) {
 			console.log(isStalemate);
-			notifySound.play();
+			notifySound.current.play();
 			setGameOver({
 				isGameOver: true,
 				message: "Stalemate! No legal moves — it's a draw",
@@ -151,7 +167,7 @@ export function useChessGame(
 		const isDraw = game.isDraw();
 
 		if (isDraw) {
-			notifySound.play();
+			notifySound.current.play();
 			setGameOver({
 				isGameOver: true,
 				message: "Draw! The game ended with no winner",
@@ -164,11 +180,11 @@ export function useChessGame(
 		const isCheck = game.isCheck();
 
 		if (!isCheck && !capture) {
-			movePieceAudio.play();
+			movePieceAudio.current.play();
 			setIsChecked(null);
 			return;
 		} else if (!isCheck && capture) {
-			capturePieceAudio.play();
+			capturePieceAudio.current.play();
 			setIsChecked(null);
 			return;
 		}
@@ -181,7 +197,7 @@ export function useChessGame(
 
 		setIsChecked(checkedSquare[0]);
 
-		checkSound.play();
+		checkSound.current.play();
 	};
 
 	const handleClickMove = (
@@ -190,16 +206,17 @@ export function useChessGame(
 		color: string,
 		promoteTo?: string
 	) => {
+		console.log("ENTER HANDLE CLICK MOVE");
 		if (playerColor === game.turn() && playerColor === color) {
 			if (!selectedSquare) {
 				// select piece
+				console.log("SELECTING PIECE");
 				if (!piece) return;
 				getValidMovesForSquare(square);
 				setSelectedSquare(square);
 
 				setHoveredSquare(square);
 			} else {
-				console.log(possibleMoves);
 				if (possibleMoves.find((m) => m.square === square)) {
 					const isPromotion = getPromotion(selectedSquare, square);
 
@@ -211,17 +228,7 @@ export function useChessGame(
 							from: selectedSquare,
 							to: square,
 						});
-
-						dispatch(
-							setPlayerColor(playerColor === "w" ? "b" : "w")
-						);
-						dispatch(setBoard(game.board()));
-						setSelectedSquare(null);
-						setHoveredSquare(null);
-						setPossibleMoves([]);
-						handleCheck(color === "w" ? "b" : "w");
-						handleEndGame();
-						saveGameInLocalStorage(game.fen());
+						finalizeMove();
 					}
 				} else {
 					// change selected piece
@@ -234,7 +241,6 @@ export function useChessGame(
 			selectedSquare &&
 			possibleMoves.find((x) => x.square === square)
 		) {
-			console.log("capture");
 			// Opponent piece capture scenario
 			const isPromotion = getPromotion(selectedSquare, square);
 
@@ -243,27 +249,7 @@ export function useChessGame(
 			} else {
 				// capture
 				game.move({ from: selectedSquare, to: square });
-				dispatch(setPlayerColor(playerColor === "w" ? "b" : "w"));
-
-				dispatch(setBoard(game.board()));
-				setSelectedSquare(null);
-				setHoveredSquare(null);
-				setPossibleMoves([]);
-				handleCheck(color, true);
-				handleEndGame();
-				saveGameInLocalStorage(game.fen());
-
-				const isInsufficientMaterial = game.isInsufficientMaterial();
-
-				// handle insufficient material
-				if (isInsufficientMaterial) {
-					notifySound.play();
-					setGameOver({
-						isGameOver: true,
-						message: "Draw! Insufficient material",
-					});
-					localStorage.setItem("gameover", "true");
-				}
+				finalizeMove(true);
 			}
 		}
 	};
@@ -289,11 +275,6 @@ export function useChessGame(
 
 		const from = dragInfoRef.current.from;
 
-		setDraggedSquare(null);
-		setHoveredSquare(null);
-		setSelectedSquare(null);
-		setPossibleMoves([]);
-
 		if (!possibleMoves.find((m) => m.square === to)) return;
 
 		const isPromotion = getPromotion(from as Square, to as Square);
@@ -304,30 +285,11 @@ export function useChessGame(
 			return;
 		}
 		const move = game.move({ from, to });
-		dispatch(setPlayerColor(playerColor === "w" ? "b" : "w"));
 
-		dispatch(setBoard(game.board()));
-		const color = game.turn();
-		handleCheck(color, move.captured ? true : false);
-		handleEndGame();
-		saveGameInLocalStorage(game.fen());
-
-		const isInsufficientMaterial = game.isInsufficientMaterial();
-
-		// handle insufficient material
-		if (isInsufficientMaterial) {
-			notifySound.play();
-			setGameOver({
-				isGameOver: true,
-				message: "Draw! Insufficient material",
-			});
-			localStorage.setItem("gameover", "true");
-			return;
-		}
+		finalizeMove(move.captured ? true : false);
 	};
 
 	return {
-		// board,
 		game,
 		possibleMoves,
 		hoveredSquare,
