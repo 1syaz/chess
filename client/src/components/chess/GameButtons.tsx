@@ -1,19 +1,21 @@
+import type { SetStateAction } from "react";
 import { Button } from "../ui/button";
 interface GameButtonsProps {
-  handleResign: () => void;
+  toggleResignPopup: React.Dispatch<SetStateAction<boolean>>;
   handleDraw: () => void;
   handleTakeback: () => void;
 }
 
 function GameButtons({
-  handleResign,
+  toggleResignPopup,
   handleTakeback,
   handleDraw,
 }: GameButtonsProps) {
   return (
     <div className="flex flex-row lg:flex-col gap-3 p-4 flex-wrap">
       <Button
-        onClick={handleResign}
+        // onClick={handleResign}
+        onClick={() => toggleResignPopup((prev) => !prev)}
         variant="destructive"
         size="sm"
         className="w-auto cursor-pointer flex-1 lg:flex-none"

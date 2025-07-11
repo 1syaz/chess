@@ -1,9 +1,9 @@
 import {
-	Chess,
-	type Color,
-	type Piece,
-	type PieceSymbol,
-	type Square,
+  Chess,
+  type Color,
+  type Piece,
+  type PieceSymbol,
+  type Square,
 } from "chess.js";
 
 import { useRef, useState } from "react";
@@ -16,292 +16,368 @@ import notifyAudio from "@/assets/sounds/GenericNotify.mp3";
 import checkAudio from "@/assets/sounds/Check.mp3";
 
 export function useChessLogic(
-	setGameOver: React.Dispatch<
-		React.SetStateAction<{
-			isGameOver: boolean;
-			message: string;
-		}>
-	>,
-	game: Chess
+  setGameOver: React.Dispatch<
+    React.SetStateAction<{
+      isGameOver: boolean;
+      message: string;
+    }>
+  >,
+  game: Chess,
 ) {
-	const { playerColor } = useAppSelector((state) => state.game);
-	const dragInfoRef = useRef<{ from: string; piece: string } | null>(null);
-	const [hoveredSquare, setHoveredSquare] = useState<string | null>(null);
-	const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
-	const [draggedSquare, setDraggedSquare] = useState<string | null>(null);
-	const [isChecked, setIsChecked] = useState<string | null>(null);
+  const { playerColor } = useAppSelector((state) => state.game);
+  const dragInfoRef = useRef<{ from: string; piece: string } | null>(null);
+  const [hoveredSquare, setHoveredSquare] = useState<string | null>(null);
+  const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
+  const [draggedSquare, setDraggedSquare] = useState<string | null>(null);
+  const [isChecked, setIsChecked] = useState<string | null>(null);
 
-	const [isPromotion, setIsPromotion] = useState<{
-		to: string;
-		from: string;
-		status: boolean;
-		color: "w" | "b";
-	}>();
-	const [possibleMoves, setPossibleMoves] = useState<
-		{
-			square: Square;
-			isCapture?: boolean;
-		}[]
-	>([]);
-	const dispatch = useAppDispatch();
+  const [isPromotion, setIsPromotion] = useState<{
+    to: string;
+    from: string;
+    status: boolean;
+    color: "w" | "b";
+  }>();
+  const [possibleMoves, setPossibleMoves] = useState<
+    {
+      square: Square;
+      isCapture?: boolean;
+    }[]
+  >([]);
+  const dispatch = useAppDispatch();
 
-	// === game audios
-	const movePieceAudio = useRef(new Audio(moveAudio));
-	const capturePieceAudio = useRef(new Audio(captureAudio));
-	const notifySound = useRef(new Audio(notifyAudio));
-	const checkSound = useRef(new Audio(checkAudio));
+  // === game audios
+  const movePieceAudio = useRef(new Audio(moveAudio));
+  const capturePieceAudio = useRef(new Audio(captureAudio));
+  const notifySound = useRef(new Audio(notifyAudio));
+  const checkSound = useRef(new Audio(checkAudio));
 
-	// === utils
-	const finalizeMove = (capture = false) => {
-		const color = game.turn();
-		dispatch(setPlayerColor(playerColor === "w" ? "b" : "w"));
-		dispatch(setBoard(game.board()));
-		setSelectedSquare(null);
-		setHoveredSquare(null);
-		setPossibleMoves([]);
-		handleEndGame();
-		saveGameInLocalStorage(game.fen());
-		handleCheck(color, capture);
+  // === utils
+  const finalizeMove = (capture = false) => {
+    const color = game.turn();
+    dispatch(setPlayerColor(playerColor === "w" ? "b" : "w"));
+    dispatch(setBoard(game.board()));
+    setSelectedSquare(null);
+    setHoveredSquare(null);
+    setPossibleMoves([]);
+    handleEndGame();
+    saveGameInLocalStorage(game.fen());
+    handleCheck(color, capture);
 
-		// handle insufficient material
-		const isInsufficientMaterial = game.isInsufficientMaterial();
-		if (isInsufficientMaterial) {
-			notifySound.current.play();
-			setGameOver({
-				isGameOver: true,
-				message: "Draw! Insufficient material",
-			});
-			localStorage.setItem("gameover", "true");
-		}
-	};
+    // handle insufficient material
+    const isInsufficientMaterial = game.isInsufficientMaterial();
+    if (isInsufficientMaterial) {
+      notifySound.current.play();
+      const message = "Draw! Insufficient material";
+      setGameOver({
+        isGameOver: true,
+        message,
+      });
+      localStorage.setItem(
+        "gameover",
+        JSON.stringify({
+          isGameOver: true,
+          message,
+        }),
+      );
+    }
+  };
 
-	const getPromotion = (from: Square, to: Square) => {
-		for (const move of game.moves({ verbose: true })) {
-			if (move.from === from && move.to === to && move.promotion) {
-				setIsPromotion({
-					color: move.color,
-					from: move.from,
-					status: true,
-					to: move.to,
-				});
-				return true;
-			}
-		}
-		return false;
-	};
+  const getPromotion = (from: Square, to: Square) => {
+    for (const move of game.moves({ verbose: true })) {
+      if (move.from === from && move.to === to && move.promotion) {
+        setIsPromotion({
+          color: move.color,
+          from: move.from,
+          status: true,
+          to: move.to,
+        });
+        return true;
+      }
+    }
+    return false;
+  };
 
-	const saveGameInLocalStorage = (fen: string) => {
-		localStorage.setItem("gameState", fen);
-	};
+  const saveGameInLocalStorage = (fen: string) => {
+    const gameState = {
+      fen,
+      playerColor: playerColor === "w" ? "b" : "w",
+    };
+    localStorage.setItem("chessGame", JSON.stringify(gameState));
+  };
 
-	const handlePromotion = (
-		from: Square | string,
-		to: Square | string,
-		promoteTo?: string
-	) => {
-		if (!promoteTo) return;
+  const handlePromotion = (
+    from: Square | string,
+    to: Square | string,
+    promoteTo?: string,
+  ) => {
+    if (!promoteTo) return;
 
-		game.move({
-			from,
-			to,
-			promotion: promoteTo ?? "q",
-		});
+    game.move({
+      from,
+      to,
+      promotion: promoteTo ?? "q",
+    });
 
-		setIsPromotion((prev) => ({ ...prev!, status: false }));
-		finalizeMove();
-	};
+    setIsPromotion((prev) => ({ ...prev!, status: false }));
+    finalizeMove();
+  };
 
-	const handlePromotionSelect = (promotionPiece: string) => {
-		if (selectedSquare && isPromotion?.to) {
-			handlePromotion(selectedSquare, isPromotion.to, promotionPiece);
-		}
-		if (dragInfoRef.current && isPromotion?.to) {
-			handlePromotion(
-				dragInfoRef.current.from,
-				isPromotion.to,
-				promotionPiece
-			);
-		}
-	};
+  const handlePromotionSelect = (promotionPiece: string) => {
+    if (selectedSquare && isPromotion?.to) {
+      handlePromotion(selectedSquare, isPromotion.to, promotionPiece);
+    }
+    if (dragInfoRef.current && isPromotion?.to) {
+      handlePromotion(dragInfoRef.current.from, isPromotion.to, promotionPiece);
+    }
+  };
 
-	const getValidMovesForSquare = (square: Square) => {
-		const moves = game.moves({ square, verbose: true });
-		const mapped = moves.map((m) => {
-			const targetPieceSquare = game.get(m.to);
+  const getValidMovesForSquare = (square: Square) => {
+    const moves = game.moves({ square, verbose: true });
+    const mapped = moves.map((m) => {
+      const targetPieceSquare = game.get(m.to);
 
-			return {
-				square: m.to,
-				isCapture:
-					targetPieceSquare &&
-					targetPieceSquare.color !== playerColor,
-			};
-		});
-		setPossibleMoves(mapped);
-	};
+      return {
+        square: m.to,
+        isCapture: targetPieceSquare && targetPieceSquare.color !== playerColor,
+      };
+    });
+    setPossibleMoves(mapped);
+  };
 
-	const handleEndGame = () => {
-		const isCheckmate = game.isCheckmate();
+  const handleEndGame = () => {
+    const isCheckmate = game.isCheckmate();
 
-		if (isCheckmate) {
-			notifySound.current.play();
-			const turn = game.turn();
-			setGameOver({
-				isGameOver: true,
-				message: `${turn === "w" ? "Black" : "White"} won by checkmate`,
-			});
-			localStorage.setItem("gameover", "true");
-		}
+    if (isCheckmate) {
+      notifySound.current.play();
+      const turn = game.turn();
+      const message = `${turn === "w" ? "Black" : "White"} won by checkmate`;
+      setGameOver({
+        isGameOver: true,
+        message,
+      });
+      localStorage.setItem(
+        "gameover",
+        JSON.stringify({
+          isGameOver: true,
+          message,
+        }),
+      );
+    }
 
-		const isStalemate = game.isStalemate();
+    const isStalemate = game.isStalemate();
 
-		if (isStalemate) {
-			console.log(isStalemate);
-			notifySound.current.play();
-			setGameOver({
-				isGameOver: true,
-				message: "Stalemate! No legal moves — it's a draw",
-			});
-			localStorage.setItem("gameover", "true");
-		}
+    if (isStalemate) {
+      notifySound.current.play();
+      const message = "Stalemate! No legal moves — it's a draw";
+      setGameOver({
+        isGameOver: true,
+        message,
+      });
+      localStorage.setItem(
+        "gameover",
+        JSON.stringify({
+          isGameOver: true,
+          message,
+        }),
+      );
+    }
 
-		const isDraw = game.isDraw();
+    const isDraw = game.isDraw();
 
-		if (isDraw) {
-			notifySound.current.play();
-			setGameOver({
-				isGameOver: true,
-				message: "Draw! The game ended with no winner",
-			});
-			localStorage.setItem("gameover", "true");
-		}
-	};
+    if (isDraw) {
+      notifySound.current.play();
+      const message = "Draw! The game ended with no winner";
+      setGameOver({
+        isGameOver: true,
+        message,
+      });
+      localStorage.setItem(
+        "gameover",
+        JSON.stringify({
+          isGameOver: true,
+          message,
+        }),
+      );
+    }
+  };
 
-	const handleCheck = (color: string, capture: boolean = false) => {
-		const isCheck = game.isCheck();
+  const handleCheck = (color: string, capture: boolean = false) => {
+    const isCheck = game.isCheck();
 
-		if (!isCheck && !capture) {
-			movePieceAudio.current.play();
-			setIsChecked(null);
-			return;
-		} else if (!isCheck && capture) {
-			capturePieceAudio.current.play();
-			setIsChecked(null);
-			return;
-		}
+    if (!isCheck && !capture) {
+      movePieceAudio.current.play();
+      setIsChecked(null);
+      return;
+    } else if (!isCheck && capture) {
+      capturePieceAudio.current.play();
+      setIsChecked(null);
+      return;
+    }
 
-		const piece: Piece = {
-			color: color as Color,
-			type: "k",
-		};
-		const checkedSquare = game.findPiece(piece);
+    const piece: Piece = {
+      color: color as Color,
+      type: "k",
+    };
+    const checkedSquare = game.findPiece(piece);
 
-		setIsChecked(checkedSquare[0]);
+    setIsChecked(checkedSquare[0]);
 
-		checkSound.current.play();
-	};
+    checkSound.current.play();
+  };
 
-	const handleClickMove = (
-		square: Square,
-		piece: string,
-		color: string,
-		promoteTo?: string
-	) => {
-		console.log("ENTER HANDLE CLICK MOVE");
-		if (playerColor === game.turn() && playerColor === color) {
-			if (!selectedSquare) {
-				// select piece
-				console.log("SELECTING PIECE");
-				if (!piece) return;
-				getValidMovesForSquare(square);
-				setSelectedSquare(square);
+  // const handleClickMove = (
+  //   square: Square,
+  //   piece: string,
+  //   color: string,
+  //   promoteTo?: string,
+  // ) => {
+  //   if (playerColor === game.turn() && playerColor === color) {
+  //     if (!selectedSquare) {
+  //       // select piece
+  //       if (!piece) return;
+  //       getValidMovesForSquare(square);
+  //       setSelectedSquare(square);
 
-				setHoveredSquare(square);
-			} else {
-				if (possibleMoves.find((m) => m.square === square)) {
-					const isPromotion = getPromotion(selectedSquare, square);
+  //       setHoveredSquare(square);
+  //     } else {
+  //       if (possibleMoves.find((m) => m.square === square)) {
+  //         const isPromotion = getPromotion(selectedSquare, square);
 
-					if (isPromotion) {
-						if (!promoteTo) return; // return for promotion piece selection
-					} else {
-						// move piece
-						game.move({
-							from: selectedSquare,
-							to: square,
-						});
-						finalizeMove();
-					}
-				} else {
-					// change selected piece
-					setHoveredSquare(square);
-					setSelectedSquare(square);
-					getValidMovesForSquare(square);
-				}
-			}
-		} else if (
-			selectedSquare &&
-			possibleMoves.find((x) => x.square === square)
-		) {
-			// Opponent piece capture scenario
-			const isPromotion = getPromotion(selectedSquare, square);
+  //         if (isPromotion) {
+  //           if (!promoteTo) return; // return for promotion piece selection
+  //         } else {
+  //           // move piece
+  //           game.move({
+  //             from: selectedSquare,
+  //             to: square,
+  //           });
+  //           finalizeMove();
+  //         }
+  //       } else {
+  //         // change selected piece
+  //         setHoveredSquare(square);
+  //         setSelectedSquare(square);
+  //         getValidMovesForSquare(square);
+  //       }
+  //     }
+  //   } else if (
+  //     selectedSquare &&
+  //     possibleMoves.find((x) => x.square === square)
+  //   ) {
+  //     // Opponent piece capture scenario
+  //     const isPromotion = getPromotion(selectedSquare, square);
 
-			if (isPromotion) {
-				if (!promoteTo) return; // return for promotion piece selection
-			} else {
-				// capture
-				game.move({ from: selectedSquare, to: square });
-				finalizeMove(true);
-			}
-		}
-	};
+  //     if (isPromotion) {
+  //       if (!promoteTo) return; // return for promotion piece selection
+  //     } else {
+  //       // capture
+  //       game.move({ from: selectedSquare, to: square });
+  //       finalizeMove(true);
+  //     }
+  //   }
+  // };
+  const handleClickMove = (
+    square: Square,
+    piece: string,
+    color: string,
+    promoteTo?: string,
+  ) => {
+    console.log("Color of piece:", color);
+    console.log("player color", playerColor);
+    console.log("game turn  color", game.turn());
 
-	const handleDragPiece = (
-		square: Square,
-		piece: PieceSymbol,
-		moveNotation: Square
-	) => {
-		if (game.turn() !== playerColor) return;
+    if (playerColor === game.turn() && playerColor === color) {
+      if (!selectedSquare) {
+        if (!piece) {
+          return;
+        }
 
-		getValidMovesForSquare(square);
-		setDraggedSquare(moveNotation);
-		dragInfoRef.current = {
-			from: moveNotation,
-			piece: piece,
-		};
-	};
+        getValidMovesForSquare(square);
+        setSelectedSquare(square);
+        setHoveredSquare(square);
+      } else {
+        if (possibleMoves.find((m) => m.square === square)) {
+          const isPromotion = getPromotion(selectedSquare, square);
 
-	const handleDragDrop = (to: string) => {
-		if (game.turn() !== playerColor) return;
-		if (!dragInfoRef.current) return;
+          if (isPromotion) {
+            if (!promoteTo) {
+              return;
+            }
+          } else {
+            game.move({ from: selectedSquare, to: square });
+            finalizeMove();
+          }
+        } else {
+          setHoveredSquare(square);
+          setSelectedSquare(square);
+          getValidMovesForSquare(square);
+        }
+      }
+    } else if (
+      selectedSquare &&
+      possibleMoves.find((x) => x.square === square)
+    ) {
+      const isPromotion = getPromotion(selectedSquare, square);
 
-		const from = dragInfoRef.current.from;
+      if (isPromotion) {
+        if (!promoteTo) {
+          return;
+        }
+      } else {
+        game.move({ from: selectedSquare, to: square });
+        finalizeMove(true);
+      }
+    }
+  };
 
-		if (!possibleMoves.find((m) => m.square === to)) return;
+  const handleDragPiece = (
+    square: Square,
+    piece: PieceSymbol,
+    moveNotation: Square,
+  ) => {
+    if (game.turn() !== playerColor) return;
 
-		const isPromotion = getPromotion(from as Square, to as Square);
+    getValidMovesForSquare(square);
+    setDraggedSquare(moveNotation);
+    dragInfoRef.current = {
+      from: moveNotation,
+      piece: piece,
+    };
+  };
 
-		// handle promotion
-		if (isPromotion) {
-			handlePromotion(from, to);
-			return;
-		}
-		const move = game.move({ from, to });
+  const handleDragDrop = (to: string) => {
+    if (game.turn() !== playerColor) return;
+    if (!dragInfoRef.current) return;
 
-		finalizeMove(move.captured ? true : false);
-	};
+    const from = dragInfoRef.current.from;
 
-	return {
-		game,
-		possibleMoves,
-		hoveredSquare,
-		draggedSquare,
-		isPromotion,
-		isChecked,
-		handlePromotionSelect,
-		setHoveredSquare,
-		handleClickMove,
-		handleDragDrop,
-		handleDragPiece,
-		setIsPromotion,
-		getValidMovesForSquare,
-	};
+    if (!possibleMoves.find((m) => m.square === to)) return;
+
+    const isPromotion = getPromotion(from as Square, to as Square);
+
+    // handle promotion
+    if (isPromotion) {
+      handlePromotion(from, to);
+      return;
+    }
+    const move = game.move({ from, to });
+
+    finalizeMove(move.captured ? true : false);
+  };
+
+  return {
+    game,
+    possibleMoves,
+    hoveredSquare,
+    draggedSquare,
+    isPromotion,
+    isChecked,
+    handlePromotionSelect,
+    setHoveredSquare,
+    handleClickMove,
+    handleDragDrop,
+    handleDragPiece,
+    setIsPromotion,
+    getValidMovesForSquare,
+  };
 }
