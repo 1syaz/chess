@@ -8,27 +8,22 @@ import {
 
 import { useRef, useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
-import { setBoard, setPlayerColor } from "@/features/game/gameSlice";
+import {
+  selectPlayerColor,
+  setBoard,
+  setGameStatus,
+  setPlayerColor,
+} from "@/features/game/gameSlice";
 
 import moveAudio from "@/assets/sounds/Move.mp3";
 import captureAudio from "@/assets/sounds/Capture.mp3";
 import notifyAudio from "@/assets/sounds/GenericNotify.mp3";
 import checkAudio from "@/assets/sounds/Check.mp3";
 
-export function useChessLogic(
-  setGameOver: React.Dispatch<
-    React.SetStateAction<{
-      isGameOver: boolean;
-      message: string;
-    }>
-  >,
-  game: Chess,
-) {
-  const { playerColor } = useAppSelector((state) => state.game);
+export function useChessLogic(game: Chess) {
+  const playerColor = useAppSelector(selectPlayerColor);
   const dragInfoRef = useRef<{ from: string; piece: string } | null>(null);
-  const [hoveredSquare, setHoveredSquare] = useState<string | null>(null);
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
-  const [draggedSquare, setDraggedSquare] = useState<string | null>(null);
   const [isChecked, setIsChecked] = useState<string | null>(null);
 
   const [isPromotion, setIsPromotion] = useState<{
@@ -57,29 +52,10 @@ export function useChessLogic(
     dispatch(setPlayerColor(playerColor === "w" ? "b" : "w"));
     dispatch(setBoard(game.board()));
     setSelectedSquare(null);
-    setHoveredSquare(null);
     setPossibleMoves([]);
-    handleEndGame();
     saveGameInLocalStorage(game.fen());
     handleCheck(color, capture);
-
-    // handle insufficient material
-    const isInsufficientMaterial = game.isInsufficientMaterial();
-    if (isInsufficientMaterial) {
-      notifySound.current.play();
-      const message = "Draw! Insufficient material";
-      setGameOver({
-        isGameOver: true,
-        message,
-      });
-      localStorage.setItem(
-        "gameover",
-        JSON.stringify({
-          isGameOver: true,
-          message,
-        }),
-      );
-    }
+    handleEndGame();
   };
 
   const getPromotion = (from: Square, to: Square) => {
@@ -148,15 +124,19 @@ export function useChessLogic(
     const isCheckmate = game.isCheckmate();
 
     if (isCheckmate) {
+      setIsChecked(null);
       notifySound.current.play();
       const turn = game.turn();
       const message = `${turn === "w" ? "Black" : "White"} won by checkmate`;
-      setGameOver({
-        isGameOver: true,
-        message,
-      });
+      dispatch(
+        setGameStatus({
+          isGameOver: true,
+          message,
+        }),
+      );
+
       localStorage.setItem(
-        "gameover",
+        "gameOver",
         JSON.stringify({
           isGameOver: true,
           message,
@@ -169,12 +149,14 @@ export function useChessLogic(
     if (isStalemate) {
       notifySound.current.play();
       const message = "Stalemate! No legal moves — it's a draw";
-      setGameOver({
-        isGameOver: true,
-        message,
-      });
+      dispatch(
+        setGameStatus({
+          isGameOver: true,
+          message,
+        }),
+      );
       localStorage.setItem(
-        "gameover",
+        "gameOver",
         JSON.stringify({
           isGameOver: true,
           message,
@@ -187,12 +169,34 @@ export function useChessLogic(
     if (isDraw) {
       notifySound.current.play();
       const message = "Draw! The game ended with no winner";
-      setGameOver({
-        isGameOver: true,
-        message,
-      });
+      dispatch(
+        setGameStatus({
+          isGameOver: true,
+          message,
+        }),
+      );
       localStorage.setItem(
-        "gameover",
+        "gameOver",
+        JSON.stringify({
+          isGameOver: true,
+          message,
+        }),
+      );
+    }
+
+    // handle insufficient material
+    const isInsufficientMaterial = game.isInsufficientMaterial();
+    if (isInsufficientMaterial) {
+      notifySound.current.play();
+      const message = "Draw! Insufficient material";
+      dispatch(
+        setGameStatus({
+          isGameOver: true,
+          message,
+        }),
+      );
+      localStorage.setItem(
+        "gameOver",
         JSON.stringify({
           isGameOver: true,
           message,
@@ -219,96 +223,40 @@ export function useChessLogic(
       type: "k",
     };
     const checkedSquare = game.findPiece(piece);
-
     setIsChecked(checkedSquare[0]);
-
     checkSound.current.play();
   };
 
-  // const handleClickMove = (
-  //   square: Square,
-  //   piece: string,
-  //   color: string,
-  //   promoteTo?: string,
-  // ) => {
-  //   if (playerColor === game.turn() && playerColor === color) {
-  //     if (!selectedSquare) {
-  //       // select piece
-  //       if (!piece) return;
-  //       getValidMovesForSquare(square);
-  //       setSelectedSquare(square);
-
-  //       setHoveredSquare(square);
-  //     } else {
-  //       if (possibleMoves.find((m) => m.square === square)) {
-  //         const isPromotion = getPromotion(selectedSquare, square);
-
-  //         if (isPromotion) {
-  //           if (!promoteTo) return; // return for promotion piece selection
-  //         } else {
-  //           // move piece
-  //           game.move({
-  //             from: selectedSquare,
-  //             to: square,
-  //           });
-  //           finalizeMove();
-  //         }
-  //       } else {
-  //         // change selected piece
-  //         setHoveredSquare(square);
-  //         setSelectedSquare(square);
-  //         getValidMovesForSquare(square);
-  //       }
-  //     }
-  //   } else if (
-  //     selectedSquare &&
-  //     possibleMoves.find((x) => x.square === square)
-  //   ) {
-  //     // Opponent piece capture scenario
-  //     const isPromotion = getPromotion(selectedSquare, square);
-
-  //     if (isPromotion) {
-  //       if (!promoteTo) return; // return for promotion piece selection
-  //     } else {
-  //       // capture
-  //       game.move({ from: selectedSquare, to: square });
-  //       finalizeMove(true);
-  //     }
-  //   }
-  // };
   const handleClickMove = (
     square: Square,
     piece: string,
     color: string,
     promoteTo?: string,
   ) => {
-    console.log("Color of piece:", color);
-    console.log("player color", playerColor);
-    console.log("game turn  color", game.turn());
-
     if (playerColor === game.turn() && playerColor === color) {
+      // select square
       if (!selectedSquare) {
         if (!piece) {
           return;
         }
-
         getValidMovesForSquare(square);
         setSelectedSquare(square);
-        setHoveredSquare(square);
       } else {
         if (possibleMoves.find((m) => m.square === square)) {
           const isPromotion = getPromotion(selectedSquare, square);
 
+          //  return for promotion piece selection
           if (isPromotion) {
             if (!promoteTo) {
               return;
             }
           } else {
+            // move piece
             game.move({ from: selectedSquare, to: square });
             finalizeMove();
           }
         } else {
-          setHoveredSquare(square);
+          // change selected piece
           setSelectedSquare(square);
           getValidMovesForSquare(square);
         }
@@ -317,13 +265,15 @@ export function useChessLogic(
       selectedSquare &&
       possibleMoves.find((x) => x.square === square)
     ) {
+      // opponent piece capture
       const isPromotion = getPromotion(selectedSquare, square);
 
       if (isPromotion) {
         if (!promoteTo) {
-          return;
+          return; // return for promotion piece selection
         }
       } else {
+        // capture
         game.move({ from: selectedSquare, to: square });
         finalizeMove(true);
       }
@@ -338,7 +288,6 @@ export function useChessLogic(
     if (game.turn() !== playerColor) return;
 
     getValidMovesForSquare(square);
-    setDraggedSquare(moveNotation);
     dragInfoRef.current = {
       from: moveNotation,
       piece: piece,
@@ -368,12 +317,9 @@ export function useChessLogic(
   return {
     game,
     possibleMoves,
-    hoveredSquare,
-    draggedSquare,
     isPromotion,
     isChecked,
     handlePromotionSelect,
-    setHoveredSquare,
     handleClickMove,
     handleDragDrop,
     handleDragPiece,

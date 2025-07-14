@@ -9,6 +9,7 @@ import type {
   DragState,
   PromotionState,
 } from "@/types/types";
+import { selectPlayerColor } from "@/features/game/gameSlice";
 
 type BoardSquareProps = {
   dragState: DragState;
@@ -18,7 +19,7 @@ type BoardSquareProps = {
 };
 
 function BoardSquare(props: BoardSquareProps) {
-  const { playerColor } = useAppSelector((state) => state.game);
+  const playerColor = useAppSelector(selectPlayerColor);
   const { boardSquareState, chessActions, dragState, promotionState } = props;
 
   const {
@@ -36,9 +37,8 @@ function BoardSquare(props: BoardSquareProps) {
     handleClickMove,
     handleDragDropPieces,
     handleDragPiece,
-    setHoveredSquare,
   } = chessActions;
-  const { draggedSquare, hoveredSquare, possibleMoves } = dragState;
+  const { possibleMoves } = dragState;
   const { handlePromotionSelect, isPromotion, setIsPromotion } = promotionState;
 
   const handleCloseDialog = () => {
@@ -49,9 +49,7 @@ function BoardSquare(props: BoardSquareProps) {
     <div
       onDragOver={(e) => {
         e.preventDefault();
-        setHoveredSquare(moveNotation);
       }}
-      onDragLeave={() => setHoveredSquare(null)}
       onDrop={() => handleDragDropPieces(moveNotation)}
       onClick={() => {
         handleClickMove(

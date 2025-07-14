@@ -3,16 +3,11 @@ import { getFiles, getRanks } from "@/utils/boardHelpers";
 import BoardSquare from "./BoardSquare";
 import GameOverWrapper from "./GameOverWrapper";
 import { useAppSelector } from "@/app/hooks";
+import { selectBoard, selectPlayerColor } from "@/features/game/gameSlice";
 
 interface ChessBoardProps {
-  gameOver: {
-    isGameOver: boolean;
-    message: string;
-  };
   game: Chess;
   isChecked: string | null;
-  draggedSquare: string | null;
-  hoveredSquare: string | null;
   possibleMoves: {
     square: Square;
     isCapture?: boolean;
@@ -32,7 +27,6 @@ interface ChessBoardProps {
     promoteTo?: string,
   ) => void;
   handleDragDrop: (to: string) => void;
-  setHoveredSquare: React.Dispatch<React.SetStateAction<string | null>>;
   handleDragPiece: (
     square: Square,
     piece: PieceSymbol,
@@ -55,28 +49,26 @@ interface ChessBoardProps {
 
 function ChessBoard(props: ChessBoardProps) {
   const {
-    gameOver,
+    // gameOver,
     isChecked,
-    draggedSquare,
-    hoveredSquare,
     possibleMoves,
     isPromotion,
     handleClickMove,
     handleDragDrop,
-    setHoveredSquare,
     handleDragPiece,
     setIsPromotion,
     handlePromotionSelect,
     getValidMovesForSquare,
   } = props;
 
-  const { board, playerColor } = useAppSelector((state) => state.game);
+  const board = useAppSelector(selectBoard);
+  const playerColor = useAppSelector(selectPlayerColor);
 
   return (
     <section className="flex items-center justify-center w-full h-full">
       <div className="w-full max-w-[min(100vw-2rem,100vh-2rem,700px)] aspect-square relative ">
         {/* Wrapper for end game */}
-        <GameOverWrapper gameOver={gameOver} />
+        <GameOverWrapper />
         <div className="w-full h-full border border-white/20 rounded-lg bg-custom-grey overflow-hidden">
           <div className="grid grid-cols-8 w-full h-full">
             {board!.map((b, rowIdx) =>
@@ -91,8 +83,6 @@ function ChessBoard(props: ChessBoardProps) {
 
                 // prop
                 const dragState = {
-                  draggedSquare,
-                  hoveredSquare,
                   possibleMoves,
                 };
                 const promotionState = {
@@ -114,7 +104,6 @@ function ChessBoard(props: ChessBoardProps) {
                   handleClickMove,
                   handleDragPiece,
                   handleDragDropPieces: handleDragDrop,
-                  setHoveredSquare,
                   getValidMovesForSquare,
                 };
                 return (

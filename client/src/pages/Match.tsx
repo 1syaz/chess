@@ -1,13 +1,20 @@
-import { useAppDispatch, useAppSelector } from "@/app/hooks";
+import notifyAudio from "@/assets/sounds/GenericNotify.mp3";
 import ChessBoard from "@/components/chess/ChessBoard";
 import PlayerInfo from "@/components/chess/PlayerInfo";
 import DialogComponent from "@/components/DialogComponent";
 import { Button } from "@/components/ui/button";
-import { startGame } from "@/features/game/gameSlice";
+import { Chess, type Color } from "chess.js";
+import {
+  selectBoard,
+  selectFen,
+  selectPlayerColor,
+  setGameStatus,
+  setPlayers,
+  startGame,
+} from "@/features/game/gameSlice";
+import { useAppDispatch, useAppSelector } from "@/app/hooks";
 import { useChessLogic } from "@/hooks/useChessLogic";
-import { Chess } from "chess.js";
 import { useEffect, useRef, useState } from "react";
-import notifyAudio from "@/assets/sounds/GenericNotify.mp3";
 
 const getInitialPlayerColor = () => {
   const saved = localStorage.getItem("chessGame");
@@ -17,36 +24,24 @@ const getInitialPlayerColor = () => {
 const playerColorFromLS = getInitialPlayerColor();
 
 function Match() {
-  const dispatch = useAppDispatch();
   const [isResignPopupOpen, setIsResignPopupOpen] = useState<boolean>(false);
-  const { fen, playerColor, board } = useAppSelector((state) => state.game);
+  const dispatch = useAppDispatch();
+  const fen = useAppSelector(selectFen);
+  const playerColor = useAppSelector(selectPlayerColor);
+  const board = useAppSelector(selectBoard);
   const gameRef = useRef<Chess>(new Chess(fen));
-  const [gameOver, setGameOver] = useState<{
-    isGameOver: boolean;
-    message: string;
-  }>(
-    localStorage.getItem("gameover")
-      ? JSON.parse(localStorage.getItem("gameover")!)
-      : {
-          isGameOver: false,
-          message: "",
-        },
-  );
 
   const {
     isChecked,
-    draggedSquare,
-    hoveredSquare,
     possibleMoves,
     isPromotion,
     handleClickMove,
     handleDragDrop,
-    setHoveredSquare,
     handleDragPiece,
     setIsPromotion,
     handlePromotionSelect,
     getValidMovesForSquare,
-  } = useChessLogic(setGameOver, gameRef.current);
+  } = useChessLogic(gameRef.current);
 
   const handleGameUpdate = (game: Chess) => {
     gameRef.current = game;
@@ -60,7 +55,7 @@ function Match() {
     const message = `${turn === "w" ? "Black" : "White"} wins — ${
       turn === "w" ? "White" : "Black"
     } resigned.`;
-    setGameOver({ isGameOver: true, message });
+    dispatch(setGameStatus({ isGameOver: true, message }));
     localStorage.setItem(
       "gameOver",
       JSON.stringify({ isGameOver: true, message }),
@@ -68,13 +63,34 @@ function Match() {
     setIsResignPopupOpen(false);
   };
 
+  // starting game
   useEffect(() => {
+    const savedPlayersFromLS = localStorage.getItem("players");
+    const parsedPlayers = savedPlayersFromLS
+      ? JSON.parse(savedPlayersFromLS)
+      : null;
+
+    // temp hard coded
+    const player1 = {
+      name: "player1",
+      timeLeft: parsedPlayers?.players?.player1 ?? 600000,
+      color: "w" as Color,
+      imgUrl: "https://avatars.githubusercontent.com/u/132806487?v=4",
+    };
+    const player2 = {
+      name: "player2",
+      timeLeft: parsedPlayers?.players?.player2 ?? 600000,
+      color: "b" as Color,
+      imgUrl: "https://github.com/shadcn.png",
+    };
+
     dispatch(
       startGame({
         board: gameRef.current.board(),
         playerColor: playerColorFromLS ?? gameRef.current.turn(),
       }),
     );
+    dispatch(setPlayers([player1, player2]));
   }, [dispatch]);
 
   // TODO update
@@ -100,16 +116,12 @@ function Match() {
       )}
       <div className="flex flex-col-reverse lg:flex-row items-start justify-center gap-3">
         <ChessBoard
-          gameOver={gameOver}
           game={gameRef.current}
           isChecked={isChecked}
-          draggedSquare={draggedSquare}
-          hoveredSquare={hoveredSquare}
           possibleMoves={possibleMoves}
           isPromotion={isPromotion}
           handleClickMove={handleClickMove}
           handleDragDrop={handleDragDrop}
-          setHoveredSquare={setHoveredSquare}
           handleDragPiece={handleDragPiece}
           setIsPromotion={setIsPromotion}
           handlePromotionSelect={handlePromotionSelect}
@@ -118,8 +130,6 @@ function Match() {
         <PlayerInfo
           updateGame={handleGameUpdate}
           toggleResignPopup={setIsResignPopupOpen}
-          gameOver={gameOver}
-          setGameOver={setGameOver}
         />
       </div>
     </div>

@@ -1,8 +1,6 @@
 import type { Color, PieceSymbol, Square } from "chess.js";
 
 export type DragState = {
-  draggedSquare: string | null;
-  hoveredSquare: string | null;
   possibleMoves: { square: Square; isCapture?: boolean }[];
 };
 
@@ -57,6 +55,5 @@ export type ChessActions = {
     moveNotation: Square,
   ) => void;
   handleDragDropPieces: (to: string) => void;
-  setHoveredSquare: React.Dispatch<React.SetStateAction<string | null>>;
   getValidMovesForSquare: (square: Square) => void;
 };
