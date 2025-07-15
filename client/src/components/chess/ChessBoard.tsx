@@ -49,7 +49,6 @@ interface ChessBoardProps {
 
 function ChessBoard(props: ChessBoardProps) {
   const {
-    // gameOver,
     isChecked,
     possibleMoves,
     isPromotion,

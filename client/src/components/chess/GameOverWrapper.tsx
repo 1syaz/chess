@@ -1,13 +1,6 @@
 import { useAppSelector } from "@/app/hooks";
 import { selectGameStatus } from "@/features/game/gameSlice";
 
-// interface GameOverWrapperProps {
-// 	// gameOver: {
-// 	// 	isGameOver: boolean;
-// 	// 	message: string;
-// 	// };
-// }
-
 function GameOverWrapper() {
   const gameStatus = useAppSelector(selectGameStatus);
   return (

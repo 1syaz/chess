@@ -50,7 +50,6 @@ const initialState: GameState = {
 
 export const gameSlice = createSlice({
   name: "game",
-
   initialState,
   reducers: {
     setGameStatus: (
@@ -88,9 +87,17 @@ export const gameSlice = createSlice({
       state.board = action.payload;
     },
     decrementTimeout: (state, action: PayloadAction<"p1" | "p2">) => {
-      if (action.payload === "p1" && state.player1) {
+      if (
+        action.payload === "p1" &&
+        state.player1 &&
+        state.player1.timeLeft > 0
+      ) {
         state.player1.timeLeft -= 1000;
-      } else if (state.player2) {
+      } else if (
+        action.payload === "p2" &&
+        state.player2 &&
+        state.player2.timeLeft > 0
+      ) {
         state.player2.timeLeft -= 1000;
       }
     },

@@ -1,6 +1,6 @@
 import notifyAudio from "@/assets/sounds/GenericNotify.mp3";
 import ChessBoard from "@/components/chess/ChessBoard";
-import PlayerInfo from "@/components/chess/PlayerInfo";
+import MatchPanel from "@/components/chess/MatchPanel";
 import DialogComponent from "@/components/DialogComponent";
 import { Button } from "@/components/ui/button";
 import { Chess, type Color } from "chess.js";
@@ -127,7 +127,7 @@ function Match() {
           handlePromotionSelect={handlePromotionSelect}
           getValidMovesForSquare={getValidMovesForSquare}
         />
-        <PlayerInfo
+        <MatchPanel
           updateGame={handleGameUpdate}
           toggleResignPopup={setIsResignPopupOpen}
         />
