@@ -78,7 +78,6 @@ function MatchPanel({ toggleResignPopup, updateGame }: PlayerInfoProps) {
     notifySound.play();
 
     const message = `${playerColor === "w" ? "Black" : "White"} wins — ${playerColor === "b" ? "Black" : "White"} ran out of time.`;
-    // dispatch(setPlayers())
     dispatch(setGameStatus({ isGameOver: true, message }));
     localStorage.setItem(
       "gameOver",
