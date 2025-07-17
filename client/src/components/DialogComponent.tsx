@@ -29,7 +29,9 @@ function DialogComponent({
         <Dialog open={isDialogOpen} onOpenChange={toggleDialog}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle className="text-white ">{dialogTitle}</DialogTitle>
+              <DialogTitle className="text-white font-bold">
+                {dialogTitle}
+              </DialogTitle>
               <DialogDescription className="sr-only"> </DialogDescription>
             </DialogHeader>
             {children}

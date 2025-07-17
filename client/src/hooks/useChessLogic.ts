@@ -6,7 +6,7 @@ import {
   type Square,
 } from "chess.js";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type SetStateAction } from "react";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
 import {
   selectPlayerColor,
@@ -20,7 +20,10 @@ import captureAudio from "@/assets/sounds/Capture.mp3";
 import notifyAudio from "@/assets/sounds/GenericNotify.mp3";
 import checkAudio from "@/assets/sounds/Check.mp3";
 
-export function useChessLogic(game: Chess) {
+export function useChessLogic(
+  game: Chess,
+  setIsInGame: React.Dispatch<SetStateAction<boolean>>,
+) {
   const playerColor = useAppSelector(selectPlayerColor);
   const dragInfoRef = useRef<{ from: string; piece: string } | null>(null);
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
@@ -124,6 +127,7 @@ export function useChessLogic(game: Chess) {
     const isCheckmate = game.isCheckmate();
 
     if (isCheckmate) {
+      setIsInGame(false);
       setIsChecked(null);
       notifySound.current.play();
       const turn = game.turn();
@@ -147,6 +151,7 @@ export function useChessLogic(game: Chess) {
     const isStalemate = game.isStalemate();
 
     if (isStalemate) {
+      setIsInGame(false);
       notifySound.current.play();
       const message = "Stalemate! No legal moves — it's a draw";
       dispatch(
@@ -167,6 +172,7 @@ export function useChessLogic(game: Chess) {
     const isDraw = game.isDraw();
 
     if (isDraw) {
+      setIsInGame(false);
       notifySound.current.play();
       const message = "Draw! The game ended with no winner";
       dispatch(
@@ -184,9 +190,10 @@ export function useChessLogic(game: Chess) {
       );
     }
 
-    // handle insufficient material
     const isInsufficientMaterial = game.isInsufficientMaterial();
+
     if (isInsufficientMaterial) {
+      setIsInGame(false);
       notifySound.current.play();
       const message = "Draw! Insufficient material";
       dispatch(

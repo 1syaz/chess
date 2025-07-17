@@ -66,10 +66,9 @@ function ChessBoard(props: ChessBoardProps) {
   return (
     <section className="flex items-center justify-center w-full h-full">
       <div className="w-full max-w-[min(100vw-2rem,100vh-2rem,700px)] aspect-square relative ">
-        {/* Wrapper for end game */}
         <GameOverWrapper />
         <div className="w-full h-full border border-white/20 rounded-lg bg-custom-grey overflow-hidden">
-          <div className="grid grid-cols-8 w-full h-full">
+          <div className="grid grid-cols-8 w-full h-full  select-none">
             {board!.map((b, rowIdx) =>
               b.map((square, colIdx) => {
                 const file = getFiles(playerColor as "w" | "b", colIdx);

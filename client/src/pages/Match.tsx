@@ -1,20 +1,19 @@
-import notifyAudio from "@/assets/sounds/GenericNotify.mp3";
 import ChessBoard from "@/components/chess/ChessBoard";
 import MatchPanel from "@/components/chess/MatchPanel";
-import DialogComponent from "@/components/DialogComponent";
-import { Button } from "@/components/ui/button";
-import { Chess, type Color } from "chess.js";
+import { Chess } from "chess.js";
 import {
   selectBoard,
   selectFen,
+  selectGameStatus,
   selectPlayerColor,
-  setGameStatus,
-  setPlayers,
-  startGame,
 } from "@/features/game/gameSlice";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
 import { useChessLogic } from "@/hooks/useChessLogic";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useBlocker, useLocation, useNavigate } from "react-router";
+import initLocalGame from "@/utils/initLocalGame";
+import { ConfirmLeaveDialog } from "@/components/ConfirmLeaveDialog";
+import ResignGameDialog from "@/components/ResignGameDialog";
 
 const getInitialPlayerColor = () => {
   const saved = localStorage.getItem("chessGame");
@@ -24,12 +23,26 @@ const getInitialPlayerColor = () => {
 const playerColorFromLS = getInitialPlayerColor();
 
 function Match() {
+  // query  params
+  const location = useLocation();
+  const navigate = useNavigate();
+  const query = new URLSearchParams(location.search);
+
+  const game = query.get("game");
+  const time = query.get("time");
+
+  // game state
   const [isResignPopupOpen, setIsResignPopupOpen] = useState<boolean>(false);
-  const dispatch = useAppDispatch();
   const fen = useAppSelector(selectFen);
-  const playerColor = useAppSelector(selectPlayerColor);
-  const board = useAppSelector(selectBoard);
   const gameRef = useRef<Chess>(new Chess(fen));
+  const playerColor = useAppSelector(selectPlayerColor);
+  const gameStatus = useAppSelector(selectGameStatus);
+  const board = useAppSelector(selectBoard);
+  const dispatch = useAppDispatch();
+
+  // temp
+  const [isInGame, setIsInGame] = useState(false);
+  const blocker = useBlocker(useCallback(() => isInGame, [isInGame]));
 
   const {
     isChecked,
@@ -41,79 +54,54 @@ function Match() {
     setIsPromotion,
     handlePromotionSelect,
     getValidMovesForSquare,
-  } = useChessLogic(gameRef.current);
+  } = useChessLogic(gameRef.current, setIsInGame);
 
-  const handleGameUpdate = (game: Chess) => {
-    gameRef.current = game;
-  };
+  if (!game || !time) {
+    navigate("/play");
+  }
 
-  const handleResign = () => {
-    const notifySound = new Audio(notifyAudio);
-    const turn = gameRef.current.turn();
-    notifySound.play();
-
-    const message = `${turn === "w" ? "Black" : "White"} wins — ${
-      turn === "w" ? "White" : "Black"
-    } resigned.`;
-    dispatch(setGameStatus({ isGameOver: true, message }));
-    localStorage.setItem(
-      "gameOver",
-      JSON.stringify({ isGameOver: true, message }),
-    );
-    setIsResignPopupOpen(false);
-  };
-
-  // starting game
+  // initialize game
   useEffect(() => {
-    const savedPlayersFromLS = localStorage.getItem("players");
-    const parsedPlayers = savedPlayersFromLS
-      ? JSON.parse(savedPlayersFromLS)
-      : null;
+    if (game === "vsAI") {
+      console.log("handle AI");
+    } else if (game === "online") {
+      console.log("handle online");
+    } else {
+      initLocalGame(dispatch, gameRef, playerColorFromLS, setIsInGame, time);
+    }
+  }, [game, time, dispatch]);
 
-    // temp hard coded
-    const player1 = {
-      name: "player1",
-      timeLeft: parsedPlayers?.players?.player1 ?? 600000,
-      color: "w" as Color,
-      imgUrl: "https://avatars.githubusercontent.com/u/132806487?v=4",
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
     };
-    const player2 = {
-      name: "player2",
-      timeLeft: parsedPlayers?.players?.player2 ?? 600000,
-      color: "b" as Color,
-      imgUrl: "https://github.com/shadcn.png",
+    if (!gameStatus.isGameOver) {
+      window.addEventListener("beforeunload", handleBeforeUnload);
+    }
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
     };
+  }, [gameStatus.isGameOver]);
 
-    dispatch(
-      startGame({
-        board: gameRef.current.board(),
-        playerColor: playerColorFromLS ?? gameRef.current.turn(),
-      }),
-    );
-    dispatch(setPlayers([player1, player2]));
-  }, [dispatch]);
-
-  // TODO update
   if (!board || !playerColor) {
     return <div>Loading game...</div>;
   }
 
   return (
     <div className="relative gradient min-h-screen w-full text-white flex items-center justify-center p-4">
-      {isResignPopupOpen && (
-        <DialogComponent
-          toggleDialog={setIsResignPopupOpen}
-          isDialogOpen={isResignPopupOpen}
-          dialogTitle={"Are you sure you want to resign?"}
-        >
-          <div className="flex items-center justify-end gap-2">
-            <Button onClick={() => setIsResignPopupOpen(false)}>No</Button>
-            <Button onClick={handleResign} variant="destructive">
-              Yes
-            </Button>
-          </div>
-        </DialogComponent>
-      )}
+      <ConfirmLeaveDialog
+        blocker={blocker}
+        dispatch={dispatch}
+        gameRef={gameRef}
+        setIsInGame={setIsInGame}
+      />
+      <ResignGameDialog
+        gameRef={gameRef}
+        dispatch={dispatch}
+        isDialogOpen={isResignPopupOpen}
+        setIsDialogOpen={setIsResignPopupOpen}
+        setIsInGame={setIsInGame}
+      />
       <div className="flex flex-col-reverse lg:flex-row items-start justify-center gap-3">
         <ChessBoard
           game={gameRef.current}
@@ -128,7 +116,8 @@ function Match() {
           getValidMovesForSquare={getValidMovesForSquare}
         />
         <MatchPanel
-          updateGame={handleGameUpdate}
+          timeInMS={time}
+          gameRef={gameRef}
           toggleResignPopup={setIsResignPopupOpen}
         />
       </div>

@@ -16,10 +16,11 @@ import PlayerPanel from "../ui/PlayerPanel";
 
 interface PlayerInfoProps {
   toggleResignPopup: React.Dispatch<SetStateAction<boolean>>;
-  updateGame: (game: Chess) => void;
+  gameRef: React.RefObject<Chess>;
+  timeInMS: string | null;
 }
 
-function MatchPanel({ toggleResignPopup, updateGame }: PlayerInfoProps) {
+function MatchPanel({ toggleResignPopup, gameRef, timeInMS }: PlayerInfoProps) {
   const dispatch = useAppDispatch();
   const gameStatus = useAppSelector(selectGameStatus);
   const playerColor = useAppSelector(selectPlayerColor);
@@ -49,19 +50,19 @@ function MatchPanel({ toggleResignPopup, updateGame }: PlayerInfoProps) {
     // temp hard coded
     const player1 = {
       name: "player1",
-      timeLeft: parsedPlayers?.players?.player1 ?? 10000,
+      timeLeft: parsedPlayers?.players?.player1 ?? Number(timeInMS),
       color: "w" as Color,
       imgUrl: "https://avatars.githubusercontent.com/u/132806487?v=4",
     };
     const player2 = {
       name: "player2",
-      timeLeft: parsedPlayers?.players?.player2 ?? 63000,
+      timeLeft: parsedPlayers?.players?.player2 ?? Number(timeInMS),
       color: "b" as Color,
       imgUrl: "https://github.com/shadcn.png",
     };
 
     lowTimePlayedTrackRef.current = { p1: false, p2: false };
-    updateGame(newGame);
+    gameRef.current = newGame;
     dispatch(resetGame(turn));
     dispatch(setBoard(newGame.board()));
     dispatch(setPlayers([player1, player2]));
