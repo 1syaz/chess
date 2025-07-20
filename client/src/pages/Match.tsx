@@ -31,6 +31,12 @@ function Match() {
   const game = query.get("game");
   const time = query.get("time");
 
+  useEffect(() => {
+    if (!game || !time) {
+      navigate("/play");
+    }
+  }, [game, time, navigate]);
+
   // game state
   const [isResignPopupOpen, setIsResignPopupOpen] = useState<boolean>(false);
   const fen = useAppSelector(selectFen);
@@ -55,10 +61,6 @@ function Match() {
     handlePromotionSelect,
     getValidMovesForSquare,
   } = useChessLogic(gameRef.current, setIsInGame);
-
-  if (!game || !time) {
-    navigate("/play");
-  }
 
   // initialize game
   useEffect(() => {
@@ -94,6 +96,7 @@ function Match() {
         dispatch={dispatch}
         gameRef={gameRef}
         setIsInGame={setIsInGame}
+        timeInMs={time}
       />
       <ResignGameDialog
         gameRef={gameRef}

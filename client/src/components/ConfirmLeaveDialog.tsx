@@ -18,11 +18,13 @@ export function ConfirmLeaveDialog({
   dispatch,
   gameRef,
   setIsInGame,
+  timeInMs,
 }: {
   blocker: Blocker;
   dispatch: AppDispatch;
   gameRef: React.RefObject<Chess>;
   setIsInGame: React.Dispatch<React.SetStateAction<boolean>>;
+  timeInMs: string | null;
 }) {
   return (
     blocker.state === "blocked" && (
@@ -44,6 +46,7 @@ export function ConfirmLeaveDialog({
                   gameRef,
                   playerColorFromLS,
                   setIsInGame,
+                  timeInMs,
                 );
                 dispatch(
                   startGame({

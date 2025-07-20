@@ -58,7 +58,7 @@ function MatchPanel({ toggleResignPopup, gameRef, timeInMS }: PlayerInfoProps) {
       name: "player2",
       timeLeft: parsedPlayers?.players?.player2 ?? Number(timeInMS),
       color: "b" as Color,
-      imgUrl: "https://github.com/shadcn.png",
+      imgUrl: "https://avatars.githubusercontent.com/u/184736141?v=4",
     };
 
     lowTimePlayedTrackRef.current = { p1: false, p2: false };

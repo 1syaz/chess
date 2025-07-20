@@ -13,9 +13,7 @@ export default function initLocalGame(
   setIsInGame(true);
 
   const savedPlayersFromLS = localStorage.getItem("players");
-  const parsedPlayers = savedPlayersFromLS
-    ? JSON.parse(savedPlayersFromLS)
-    : null;
+  const parsedPlayers = savedPlayersFromLS && JSON.parse(savedPlayersFromLS);
 
   // temp hard coded
   const player1 = {

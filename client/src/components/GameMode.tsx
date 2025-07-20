@@ -8,14 +8,17 @@ import {
   CardTitle,
 } from "./ui/card";
 import { Badge } from "./ui/badge";
-// import { useNavigate } from "react-router";
 import { Button } from "./ui/button";
 import { useState } from "react";
 import DialogComponent from "./DialogComponent";
-import LocalDialogContent from "./LocalDialogContent";
+import LocalModeDialogContent from "./LocalModeDialogContent";
+import AiModeDialogContent from "./AiModeDialogContent";
+import OnlineModeDialogContent from "./OnlineModeDialogContent";
+
+type GameModes = "local" | "ai" | "online" | null;
 
 function GameMode() {
-  const [selectedMode, setSelectedMode] = useState<string>("");
+  const [selectedMode, setSelectedMode] = useState<GameModes>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const gameModes = [
@@ -56,7 +59,13 @@ function GameMode() {
           toggleDialog={setIsDialogOpen}
         >
           <div className="text-white">
-            {selectedMode === "local" ? <LocalDialogContent /> : "test"}
+            {selectedMode === "ai" ? (
+              <AiModeDialogContent />
+            ) : selectedMode === "local" ? (
+              <LocalModeDialogContent />
+            ) : (
+              <OnlineModeDialogContent />
+            )}
           </div>
         </DialogComponent>
       )}
@@ -94,7 +103,7 @@ function GameMode() {
               <Button
                 className="w-full bg-charcoal hover:bg-custom-grey"
                 onClick={() => {
-                  setSelectedMode(mode.id);
+                  setSelectedMode(mode.id as GameModes);
                   setIsDialogOpen(true);
                 }}
               >

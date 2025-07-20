@@ -1,17 +1,13 @@
-import { useNavigate } from "react-router";
 import { Button } from "./ui/button";
 
-function LocalDialogContent() {
-  const navigate = useNavigate();
+function OnlineModeDialogContent() {
   const time = [
     { minute: 5, ms: 300000 },
     { minute: 10, ms: 600000 },
     { minute: 15, ms: 900000 },
   ];
-
   const handleStartMatch = (time: number) => {
-    navigate(`/match?game=local&time=${time}`);
-    console.log(time);
+    console.log(time, "online");
   };
 
   return (
@@ -34,4 +30,4 @@ function LocalDialogContent() {
   );
 }
 
-export default LocalDialogContent;
+export default OnlineModeDialogContent;
