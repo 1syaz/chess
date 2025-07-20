@@ -54,7 +54,7 @@ export const gameSlice = createSlice({
   reducers: {
     setGameStatus: (
       state,
-      action: PayloadAction<{ isGameOver: boolean; message: string }>,
+      action: PayloadAction<{ isGameOver: boolean; message: string }>
     ) => {
       state.gameStatus.isGameOver = action.payload.isGameOver;
       state.gameStatus.message = action.payload.message;
@@ -69,7 +69,7 @@ export const gameSlice = createSlice({
       state,
       action: PayloadAction<
         { name: string; timeLeft: number; color: Color; imgUrl: string }[]
-      >,
+      >
     ) => {
       state.player1 = action.payload[0];
       state.player2 = action.payload[1];
@@ -82,7 +82,7 @@ export const gameSlice = createSlice({
           type: PieceSymbol;
           color: Color;
         } | null)[][]
-      >,
+      >
     ) => {
       state.board = action.payload;
     },
@@ -121,7 +121,7 @@ export const gameSlice = createSlice({
           color: Color;
         } | null)[][];
         playerColor: Color;
-      }>,
+      }>
     ) => {
       state.board = action.payload.board;
       state.playerColor = action.payload.playerColor;
@@ -151,7 +151,7 @@ export const selectPlayers = createSelector(
     (state: RootState) => state.game.player1,
     (state: RootState) => state.game.player2,
   ],
-  (player1, player2) => [player1, player2],
+  (player1, player2) => [player1, player2]
 );
 
 export default gameSlice.reducer;

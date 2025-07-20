@@ -55,7 +55,7 @@ function BoardSquare(props: BoardSquareProps) {
         handleClickMove(
           moveNotation,
           square?.type ?? "",
-          (square?.color as Color) ?? playerColor,
+          (square?.color as Color) ?? playerColor
         );
       }}
       className={`aspect-square flex relative items-center justify-center transition-colors duration-300 ${

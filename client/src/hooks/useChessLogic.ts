@@ -22,7 +22,7 @@ import checkAudio from "@/assets/sounds/Check.mp3";
 
 export function useChessLogic(
   game: Chess,
-  setIsInGame: React.Dispatch<SetStateAction<boolean>>,
+  setIsInGame: React.Dispatch<SetStateAction<boolean>>
 ) {
   const playerColor = useAppSelector(selectPlayerColor);
   const dragInfoRef = useRef<{ from: string; piece: string } | null>(null);
@@ -87,7 +87,7 @@ export function useChessLogic(
   const handlePromotion = (
     from: Square | string,
     to: Square | string,
-    promoteTo?: string,
+    promoteTo?: string
   ) => {
     if (!promoteTo) return;
 
@@ -136,7 +136,7 @@ export function useChessLogic(
         setGameStatus({
           isGameOver: true,
           message,
-        }),
+        })
       );
 
       localStorage.setItem(
@@ -144,7 +144,7 @@ export function useChessLogic(
         JSON.stringify({
           isGameOver: true,
           message,
-        }),
+        })
       );
     }
 
@@ -158,14 +158,14 @@ export function useChessLogic(
         setGameStatus({
           isGameOver: true,
           message,
-        }),
+        })
       );
       localStorage.setItem(
         "gameOver",
         JSON.stringify({
           isGameOver: true,
           message,
-        }),
+        })
       );
     }
 
@@ -179,14 +179,14 @@ export function useChessLogic(
         setGameStatus({
           isGameOver: true,
           message,
-        }),
+        })
       );
       localStorage.setItem(
         "gameOver",
         JSON.stringify({
           isGameOver: true,
           message,
-        }),
+        })
       );
     }
 
@@ -200,14 +200,14 @@ export function useChessLogic(
         setGameStatus({
           isGameOver: true,
           message,
-        }),
+        })
       );
       localStorage.setItem(
         "gameOver",
         JSON.stringify({
           isGameOver: true,
           message,
-        }),
+        })
       );
     }
   };
@@ -238,7 +238,7 @@ export function useChessLogic(
     square: Square,
     piece: string,
     color: string,
-    promoteTo?: string,
+    promoteTo?: string
   ) => {
     if (playerColor === game.turn() && playerColor === color) {
       // select square
@@ -290,7 +290,7 @@ export function useChessLogic(
   const handleDragPiece = (
     square: Square,
     piece: PieceSymbol,
-    moveNotation: Square,
+    moveNotation: Square
   ) => {
     if (game.turn() !== playerColor) return;
 

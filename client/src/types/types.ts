@@ -47,12 +47,12 @@ export type ChessActions = {
     square: Square,
     piece: string,
     color: string,
-    promoteTo?: string,
+    promoteTo?: string
   ) => void;
   handleDragPiece: (
     square: Square,
     piece: PieceSymbol,
-    moveNotation: Square,
+    moveNotation: Square
   ) => void;
   handleDragDropPieces: (to: string) => void;
   getValidMovesForSquare: (square: Square) => void;

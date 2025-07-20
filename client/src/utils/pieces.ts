@@ -12,16 +12,16 @@ import wQ from "@/assets/pieces/merida/wQ.svg";
 import wR from "@/assets/pieces/merida/wR.svg";
 
 export const pieces = new Map([
-	["bB", bB],
-	["bK", bK],
-	["bN", bN],
-	["bP", bP],
-	["bQ", bQ],
-	["bR", bR],
-	["wB", wB],
-	["wK", wK],
-	["wN", wN],
-	["wP", wP],
-	["wQ", wQ],
-	["wR", wR],
+  ["bB", bB],
+  ["bK", bK],
+  ["bN", bN],
+  ["bP", bP],
+  ["bQ", bQ],
+  ["bR", bR],
+  ["wB", wB],
+  ["wK", wK],
+  ["wN", wN],
+  ["wP", wP],
+  ["wQ", wQ],
+  ["wR", wR],
 ]);

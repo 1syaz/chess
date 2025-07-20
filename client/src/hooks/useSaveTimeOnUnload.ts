@@ -10,7 +10,7 @@ export const useSaveTimeOnUnload = (p1TimeLeft: number, p2TimeLeft: number) => {
             player1: p1TimeLeft,
             player2: p2TimeLeft,
           },
-        }),
+        })
       );
     };
 

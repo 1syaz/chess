@@ -8,7 +8,7 @@ export default function initLocalGame(
   gameRef: React.RefObject<Chess>,
   playerColorFromLS: string | null,
   setIsInGame: React.Dispatch<SetStateAction<boolean>>,
-  timeInMS: string | null,
+  timeInMS: string | null
 ) {
   setIsInGame(true);
 
@@ -33,7 +33,7 @@ export default function initLocalGame(
     startGame({
       board: gameRef.current.board(),
       playerColor: (playerColorFromLS as Color) ?? "w",
-    }),
+    })
   );
   dispatch(setPlayers([player1, player2]));
 }

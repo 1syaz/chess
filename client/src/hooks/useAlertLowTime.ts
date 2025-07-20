@@ -16,7 +16,7 @@ export const useAlertLowTime = (
     p1: boolean;
     p2: boolean;
   }>,
-  handleFinishTimeGameOver: () => void,
+  handleFinishTimeGameOver: () => void
 ) => {
   const player1Ref = useRef(p1);
   const player2Ref = useRef(p2);

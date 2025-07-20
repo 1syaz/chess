@@ -20,14 +20,14 @@ function PlayerPanel({
   const [player1, player2] = useAppSelector(selectPlayers);
   useSaveTimeOnUnload(
     (player1 && player1.timeLeft) ?? 0,
-    (player2 && player2.timeLeft) ?? 0,
+    (player2 && player2.timeLeft) ?? 0
   );
   useCountDownTime();
   useAlertLowTime(
     player1,
     player2,
     lowTimePlayedTrack,
-    handleFinishTimeGameOver,
+    handleFinishTimeGameOver
   );
 
   if (!player1 || !player2) return null;

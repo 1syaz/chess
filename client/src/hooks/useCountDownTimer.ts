@@ -16,7 +16,7 @@ export const useCountDownTime = () => {
     if (!gameStatus.isGameOver) {
       interval = setInterval(
         () => dispatch(decrementTimeout(playerColor === "w" ? "p1" : "p2")),
-        1000,
+        1000
       );
     }
     return () => {

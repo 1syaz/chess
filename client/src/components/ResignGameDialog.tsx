@@ -30,7 +30,7 @@ function ResignGameDialog({
     dispatch(setGameStatus({ isGameOver: true, message }));
     localStorage.setItem(
       "gameOver",
-      JSON.stringify({ isGameOver: true, message }),
+      JSON.stringify({ isGameOver: true, message })
     );
     setIsDialogOpen(false);
     setIsInGame(false);

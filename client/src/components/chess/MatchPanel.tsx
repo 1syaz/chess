@@ -70,7 +70,7 @@ function MatchPanel({ toggleResignPopup, gameRef, timeInMS }: PlayerInfoProps) {
       setGameStatus({
         isGameOver: false,
         message: "",
-      }),
+      })
     );
   };
 
@@ -82,7 +82,7 @@ function MatchPanel({ toggleResignPopup, gameRef, timeInMS }: PlayerInfoProps) {
     dispatch(setGameStatus({ isGameOver: true, message }));
     localStorage.setItem(
       "gameOver",
-      JSON.stringify({ isGameOver: true, message }),
+      JSON.stringify({ isGameOver: true, message })
     );
   };
 

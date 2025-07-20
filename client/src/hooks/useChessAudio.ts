@@ -42,7 +42,7 @@ export function useChessAudio() {
         console.warn("Audio playback failed:", err);
       }
     },
-    [],
+    []
   );
 
   return { playSound };

@@ -24,13 +24,13 @@ interface ChessBoardProps {
     square: Square,
     piece: string,
     color: string,
-    promoteTo?: string,
+    promoteTo?: string
   ) => void;
   handleDragDrop: (to: string) => void;
   handleDragPiece: (
     square: Square,
     piece: PieceSymbol,
-    moveNotation: Square,
+    moveNotation: Square
   ) => void;
   setIsPromotion: React.Dispatch<
     React.SetStateAction<
@@ -75,7 +75,7 @@ function ChessBoard(props: ChessBoardProps) {
                 const rank = getRanks(playerColor as "w" | "b", rowIdx);
                 const moveNotation = `${file}${rank}` as Square;
                 const match = possibleMoves.find(
-                  (mv) => mv.square === moveNotation,
+                  (mv) => mv.square === moveNotation
                 );
                 const isPieceCapture = match?.isCapture;
 
@@ -113,7 +113,7 @@ function ChessBoard(props: ChessBoardProps) {
                     dragState={dragState}
                   />
                 );
-              }),
+              })
             )}
           </div>
         </div>

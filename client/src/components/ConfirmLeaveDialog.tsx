@@ -46,18 +46,18 @@ export function ConfirmLeaveDialog({
                   gameRef,
                   playerColorFromLS,
                   setIsInGame,
-                  timeInMs,
+                  timeInMs
                 );
                 dispatch(
                   startGame({
                     board: gameRef.current.board(),
                     playerColor: "w",
-                  }),
+                  })
                 );
                 dispatch(
                   setFen(
-                    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-                  ),
+                    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+                  )
                 );
                 blocker.proceed?.();
               }}
