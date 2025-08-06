@@ -8,14 +8,12 @@ export function errorMiddleware(
   _next: NextFunction
 ) {
   if (err instanceof ApiErrorResponse) {
-    console.log(err);
     return res.status(err.statusCode).json({
       success: err.success,
       message: err.message,
       errors: err.errors,
     });
   } else {
-    console.log(err);
     return res.status(500).json({
       success: false,
       message: err.message || "An unexpected error occured.",

@@ -3,6 +3,7 @@ const BACKEND_URL = "ws://localhost:3000";
 describe("game application", () => {
   const ws1 = new WebSocket(BACKEND_URL);
   const ws2 = new WebSocket(BACKEND_URL);
+
   test("Message send from game1 react another player of game1", async () => {
     // make sure websocket are connected
     await Promise.all([

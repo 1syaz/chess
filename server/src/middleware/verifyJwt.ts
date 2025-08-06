@@ -3,11 +3,11 @@ import { ApiErrorResponse } from "../utils/ApiErrorResponse";
 import jwt, { JwtPayload, TokenExpiredError } from "jsonwebtoken";
 import { User } from "./../models/userModel";
 import config from "../config/config";
-import { generateNewAccessToken } from "../utils/GenerateNewAccessToken";
 import {
   accessTokenOptions,
   refreshTokenOptions,
 } from "../utils/cookiesOption";
+import { generateNewAccessToken } from "../utils/generateNewAccessToken";
 
 export async function verifyJwt(
   req: Request,
