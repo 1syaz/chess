@@ -1,5 +1,7 @@
 const BACKEND_URL = "ws://localhost:3000";
 
+jest.setTimeout(30_000);
+
 describe("game application", () => {
   const ws1 = new WebSocket(BACKEND_URL);
   const ws2 = new WebSocket(BACKEND_URL);

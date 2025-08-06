@@ -81,7 +81,13 @@ async function loginUser(req: Request, res: Response, next: NextFunction) {
       .status(200)
       .cookie("accessToken", accessToken, accessTokenOptions)
       .cookie("refreshToken", refreshToken, refreshTokenOptions)
-      .json(new ApiResponse(200, "User logged in!", user));
+      .json(
+        new ApiResponse(200, "User logged in!", {
+          _id: user._id,
+          username: user.username,
+          email: user.email,
+        })
+      );
   } catch (error) {
     if (error instanceof ZodError) {
       const errors = error.issues.map((err) => err.message);
