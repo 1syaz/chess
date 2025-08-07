@@ -7,8 +7,9 @@ interface IUser extends Document {
   username: string;
   email: string;
   refreshToken: string;
-  password: string;
-  googleId: string;
+  avatar: string;
+  password?: string;
+  googleId?: string;
 }
 
 interface IUserMethods {
@@ -21,7 +22,8 @@ interface IUserMethods {
 const userSchema = new Schema<IUser, Model<IUser>, IUserMethods>({
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
+  password: { type: String, required: false },
+  avatar: { type: String, required: false },
   googleId: { type: String, required: false },
   refreshToken: { type: String, required: false, unique: true },
 });
@@ -29,7 +31,7 @@ const userSchema = new Schema<IUser, Model<IUser>, IUserMethods>({
 userSchema.methods.generateAccessToken = function () {
   const accessToken = jwt.sign(
     {
-      _id: this._id,
+      id: this._id,
       email: this.email,
       googleId: this.googleId || "",
     },
@@ -45,7 +47,7 @@ userSchema.methods.generateAccessToken = function () {
 userSchema.methods.generateRefreshToken = function () {
   const refreshToken = jwt.sign(
     {
-      _id: this._id,
+      id: this._id,
       email: this.email,
       googleId: this.googleId || "",
     },
@@ -59,15 +61,19 @@ userSchema.methods.generateRefreshToken = function () {
 };
 
 userSchema.methods.isPasswordCorrect = async function (password: string) {
-  const isValid = await bcrypt.compare(password, this.password);
-
+  let isValid = false;
+  if (this.password) {
+    isValid = await bcrypt.compare(password, this.password);
+  }
   return isValid;
 };
 
 userSchema.pre("save", async function () {
   if (!this.isModified("password")) return;
 
-  this.password = await bcrypt.hash(this.password, 10);
+  if (this.password) {
+    this.password = await bcrypt.hash(this.password, 10);
+  }
 });
 
 export const User = model("User", userSchema);

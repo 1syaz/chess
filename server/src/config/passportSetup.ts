@@ -19,23 +19,27 @@ passport.use(
       const googleUser = profile._json;
       const { email, picture, given_name, sub } = googleUser;
 
-      const user = await User.findOne({ email });
+      let user = await User.findOne({ email });
 
       if (!user) {
-        await User.create({
-          name: given_name,
+        user = await User.create({
+          username: given_name,
           email,
           avatar: picture,
           googleId: sub,
         });
-      } else if (!user.googleId) {
+      } else if (user && !user.googleId) {
         throw new ApiErrorResponse(
           409,
           "This email is already registered with password authentication. Please login with your password."
         );
       }
 
-      return done(null, googleUser);
+      return done(null, {
+        email: user?.email,
+        googleId: user?.googleId,
+        _id: user?._id,
+      });
     }
   )
 );

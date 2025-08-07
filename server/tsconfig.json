@@ -9,7 +9,7 @@
     "isolatedModules": true
   },
   "include": [
-    "src/**/*"
+    "src/**/*", "./src/types"
   ],
   "exlude": [
     "node_modules",

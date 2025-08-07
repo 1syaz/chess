@@ -1,6 +1,4 @@
-import { Request, Response, NextFunction } from "express";
 import { ApiErrorResponse } from "../utils/ApiErrorResponse";
-import jwt, { JwtPayload, TokenExpiredError } from "jsonwebtoken";
 import { User } from "./../models/userModel";
 import config from "../config/config";
 import {
@@ -8,6 +6,9 @@ import {
   refreshTokenOptions,
 } from "../utils/cookiesOption";
 import { generateNewAccessToken } from "../utils/generateNewAccessToken";
+import type { NextFunction, Request, Response } from "express";
+import type { JwtPayload } from "jsonwebtoken";
+import jwt, { TokenExpiredError } from "jsonwebtoken";
 
 export async function verifyJwt(
   req: Request,
@@ -17,7 +18,6 @@ export async function verifyJwt(
   const accessToken =
     req.cookies.accessToken ||
     req.header("Authorization")?.replace("Bearer ", "");
-
   if (!accessToken) {
     throw new ApiErrorResponse(
       401,
@@ -25,7 +25,7 @@ export async function verifyJwt(
     );
   }
 
-  let decodedToken;
+  let decodedToken: JwtPayload;
   try {
     decodedToken = jwt.verify(
       accessToken,

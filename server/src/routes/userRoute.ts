@@ -1,6 +1,10 @@
 import { Request, Response } from "express";
 import { Router } from "express";
-import { createUser, loginUser } from "../controllers/userController";
+import {
+  createUser,
+  handleGoogleLogin,
+  loginUser,
+} from "../controllers/userController";
 import { AsyncHandler } from "../utils/AsyncHandler";
 import passport from "passport";
 import { verifyJwt } from "../middleware/verifyJwt";
@@ -19,13 +23,11 @@ userRouter.post("/login", AsyncHandler(loginUser));
 
 userRouter.get(
   "/google/callback",
-  passport.authenticate("google", { session: false }),
-  function (req, res) {
-    // Successful authentication, redirect home.
-    // res.redirect('/');
-    console.log("USER FORM PASSPOR", req.user);
-    res.send("working");
-  }
+  passport.authenticate("google", {
+    session: false,
+    failureRedirect: "/login?error=oauth_failed",
+  }),
+  AsyncHandler(handleGoogleLogin)
 );
 
 export default userRouter;

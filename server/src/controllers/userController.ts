@@ -7,6 +7,14 @@ import {
   accessTokenOptions,
   refreshTokenOptions,
 } from "../utils/cookiesOption";
+import config from "../config/config";
+import { ObjectId } from "mongoose";
+
+interface IReqUser {
+  id: ObjectId;
+  googleId: string;
+  email: string;
+}
 
 const createUserBodySchema = z.object({
   username: z
@@ -101,4 +109,34 @@ async function loginUser(req: Request, res: Response, next: NextFunction) {
   }
 }
 
-export { createUser, loginUser };
+async function handleGoogleLogin(req: Request, res: Response) {
+  const { id } = req?.user as IReqUser;
+
+  const user = await User.findById(id);
+
+  if (!user) {
+    const redirectUrl =
+      config.DEV_ENV === "development"
+        ? `${config.FRONTEND_URL}/login?error=Something_went_wrong_while_logging_in`
+        : `${config.PROD_FRONTEND_URL}/login?error=Something_went_wrong_while_logging_in`;
+    return res.redirect(redirectUrl);
+  }
+
+  const accessToken = user.generateAccessToken();
+  const refreshToken = user.generateRefreshToken();
+
+  user.refreshToken = refreshToken;
+  user.save({ validateBeforeSave: false });
+
+  res.cookie("accessToken", accessToken, accessTokenOptions);
+  res.cookie("refreshToken", refreshToken, refreshTokenOptions);
+
+  const redirectUrl =
+    config.DEV_ENV === "development"
+      ? `${config.FRONTEND_URL}/play`
+      : `${config.PROD_FRONTEND_URL}/play`;
+
+  res.redirect(redirectUrl);
+}
+
+export { createUser, loginUser, handleGoogleLogin };
