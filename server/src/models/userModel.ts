@@ -25,7 +25,7 @@ const userSchema = new Schema<IUser, Model<IUser>, IUserMethods>({
   password: { type: String, required: false },
   avatar: { type: String, required: false },
   googleId: { type: String, required: false },
-  refreshToken: { type: String, required: false, unique: true },
+  refreshToken: { type: String, required: false },
 });
 
 userSchema.methods.generateAccessToken = function () {

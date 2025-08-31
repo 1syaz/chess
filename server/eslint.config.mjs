@@ -10,7 +10,14 @@ export default defineConfig([
   },
   {
     files: ["src/**/*.{js,ts,jsx,tsx}", "tests/**/*.{js,ts,jsx,tsx}"],
-    languageOptions: { globals: globals.node },
+    languageOptions: {
+      parser: tseslint.parser,
+      parserOptions: {
+        project: "./tsconfig.json",
+        sourceType: "module",
+      },
+      globals: globals.node,
+    },
     plugins: {
       "@typescript-eslint": tseslint.plugin,
     },
@@ -19,6 +26,7 @@ export default defineConfig([
         "warn",
         { argsIgnorePattern: "^_" },
       ],
+      "style/useNodejsImportProtocol": "off",
     },
   },
   { files: ["**/*.js"], languageOptions: { sourceType: "module" } },
