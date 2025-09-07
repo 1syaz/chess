@@ -17,9 +17,7 @@ export function initWebSocketServer(server: http.Server) {
       console.error(err);
     });
 
-    ws.on("close", () => {
-      // console.log("user disconnected");
-    });
+    ws.on("close", () => {});
   });
 
   wss.on("close", () => {

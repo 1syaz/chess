@@ -1,12 +1,11 @@
 import { Chess } from "chess.js";
 import { WebSocket } from "ws";
 import { PlayerColorType } from "../types/types";
-import { handleTimeFormat } from "../utils/handleTimeFormat";
 
 interface IPlayer {
   username: string;
   ws: WebSocket;
-  pieceColor: PlayerColorType;
+  pieceColor?: PlayerColorType;
   playerTime?: number;
 }
 
@@ -17,25 +16,30 @@ export class Game {
   p2: IPlayer | undefined;
   // id: string = uuidv4();
   id: string = "12345";
-  game: Chess = new Chess();
+  game: Chess = new Chess(
+    "rnbqkbnr/ppppp3/6pp/5p1Q/4P3/3P4/PPP2PPP/RNB1KBNR w KQkq - 0 4"
+  );
   fen: string = this.game.fen();
   turn: PlayerColorType;
   spectators: WebSocket[] = [];
   gameState: "waiting" | "finished" | "in-progress" | undefined;
   gameTime: number = 0;
-
-  // temp
-  whiteTimer: NodeJS.Timeout | undefined;
-  blackTimer: NodeJS.Timeout | undefined;
+  isGameOver: {
+    state: boolean;
+    reason: string;
+  } = { state: false, reason: "" };
 
   private p1TimeIntervalId: NodeJS.Timeout | undefined = undefined;
   private p2TimeIntervalId: NodeJS.Timeout | undefined = undefined;
 
-  constructor(gameTime: number = 600000) {
+  constructor(gameTime: number = 20000) {
     this.gameTime = gameTime;
   }
 
-  addPlayerOne(player: Omit<IPlayer, "playerTime">) {
+  addPlayerOne(
+    player: Omit<IPlayer, "playerTime" | "pieceColor">,
+    playerWs: WebSocket
+  ) {
     this.p1 = player;
     this.p1.pieceColor = pieceColor[
       Math.floor(Math.random() * pieceColor.length)
@@ -43,14 +47,37 @@ export class Game {
     this.turn = this.game.turn();
     this.gameState = "waiting";
     this.p1.playerTime = this.gameTime;
+
+    playerWs.send(
+      JSON.stringify({
+        event: "GAME_JOINED",
+        payload: {
+          message: "you have joined the game",
+          gameId: this.id,
+          pieceColor: this.p1.pieceColor,
+        },
+      })
+    );
   }
 
-  addPlayerTwo(player: IPlayer) {
+  addPlayerTwo(player: IPlayer, playerWs: WebSocket) {
     this.p2 = player;
     this.p2.pieceColor = this.p1?.pieceColor === "w" ? "b" : "w";
     this.gameState = "in-progress";
     this.p2.playerTime = this.gameTime;
+    console.log("added player two shoudl run timer");
     this.handleStartAndToggleTurn();
+
+    playerWs.send(
+      JSON.stringify({
+        event: "GAME_JOINED",
+        payload: {
+          message: "you have joined the game",
+          gameId: this.id,
+          pieceColor: this.p2.pieceColor,
+        },
+      })
+    );
   }
 
   startGame() {
@@ -58,32 +85,26 @@ export class Game {
     clearInterval(this.p1TimeIntervalId);
     clearInterval(this.p2TimeIntervalId);
 
-    if (this.turn === this.p1?.pieceColor) {
-      this.p1TimeIntervalId = setInterval(() => {
-        this.p1!.playerTime = this.p1?.playerTime! - 1000;
+    const currentPlayer = this.turn === this.p1?.pieceColor ? this.p1 : this.p2;
 
-        if (this.p1?.playerTime! <= 0) {
-          const data = {
-            event: "GAME_OVER",
-            message: `${this.p1?.username} ran out of time`,
-          };
+    if (currentPlayer) {
+      const intervalId = setInterval(() => {
+        if (currentPlayer.playerTime) {
+          currentPlayer.playerTime -= 1000;
 
-          this.broadcastMessage(this.p1!.ws, data);
+          if (currentPlayer.playerTime <= 0) {
+            const data = {
+              event: "GAME_OVER",
+              message: `${this.p1?.username} ran out of time`,
+            };
+
+            this.broadcastMessage(data);
+          }
         }
       }, 1000);
-    } else if (this.turn === this.p2?.pieceColor) {
-      this.p2TimeIntervalId = setInterval(() => {
-        this.p2!.playerTime = this.p2?.playerTime! - 1000;
 
-        if (this.p2?.playerTime! <= 0) {
-          const data = {
-            event: "GAME_OVER",
-            message: `${this.p2?.username} ran out of time`,
-          };
-
-          this.broadcastMessage(this.p2!.ws, data);
-        }
-      }, 1000);
+      if (currentPlayer === this.p1) this.p1TimeIntervalId = intervalId;
+      else this.p2TimeIntervalId = intervalId;
     }
   }
 
@@ -92,64 +113,101 @@ export class Game {
       this.p2TimeIntervalId && clearInterval(this.p2TimeIntervalId);
       this.p1TimeIntervalId = setInterval(() => {
         this.p1!.playerTime = this.p1?.playerTime! - 1000;
+        console.log(this.p1?.playerTime);
 
         if (this.p1?.playerTime! <= 0) {
           clearInterval(this.p1TimeIntervalId);
+          const message = `${this.p2?.pieceColor} won the game! ${this.p1?.username} ran out of time`;
           this.gameState = "finished";
-          const data = {
-            event: "game-over",
-            message: `${this.p1?.username} ran out of time`,
+          this.isGameOver = {
+            state: true,
+            reason: message,
           };
 
-          this.broadcastMessage(this.p1!.ws, data);
+          const data = {
+            event: "GAME_OVER",
+            message,
+          };
+
+          this.broadcastMessage(data);
         }
       }, 1000);
     } else if (this.turn === this.p2?.pieceColor) {
       this.p1TimeIntervalId && clearInterval(this.p1TimeIntervalId);
       this.p2TimeIntervalId = setInterval(() => {
         this.p2!.playerTime = this.p2?.playerTime! - 1000;
+        console.log(this.p1?.playerTime);
 
         if (this.p2?.playerTime! <= 0) {
           clearInterval(this.p2TimeIntervalId);
+          const message = `${this.p1?.pieceColor} won the game! ${this.p2?.pieceColor} ran out of time`;
           this.gameState = "finished";
+          this.isGameOver = {
+            state: true,
+            reason: message,
+          };
 
           const data = {
             event: "GAME_OVER",
-            message: `${this.p2?.username} ran out of time`,
+            message,
           };
 
-          this.broadcastMessage(this.p2!.ws, data);
+          this.broadcastMessage(data);
         }
       }, 1000);
     }
   }
 
   movePiece(ws: WebSocket, data: any) {
-    if (this.gameState === "finished" || this.gameState === "waiting") return;
+    const { move, pieceColor } = data;
 
-    const { move } = data;
-
-    const moves = this.game.moves({ verbose: true });
-    const isValidMove = moves.some(
-      (m) => m.to === move.to && m.from === move.from
-    );
-
-    console.log(move);
-    console.log("CHECK FOR VALID MOVE");
-    if (!isValidMove) {
-      console.log("ERROR IS VALID");
+    if (this.gameState === "finished" || this.gameState === "waiting") {
       ws.send(
         JSON.stringify({
           event: "ERROR",
           payload: {
-            message: "Invalid move",
+            message: "Game has been over",
           },
         })
       );
       return;
     }
 
-    const moveResult = this.game.move(move.to);
+    if (pieceColor !== this.turn) {
+      ws.send(
+        JSON.stringify({
+          event: "ERROR",
+          payload: {
+            message: "Not your turn yet",
+          },
+        })
+      );
+      return;
+    }
+
+    const moves = this.game.moves({ verbose: true });
+    const isValidMove = moves.some(
+      (m) => m.to === move.to && m.from === move.from
+    );
+
+    if (!isValidMove) {
+      ws.send(
+        JSON.stringify({
+          event: "ERROR",
+          payload: {
+            message: "Invalid move",
+            move,
+          },
+        })
+      );
+      return;
+    }
+
+    const moveResult = this.game.move({
+      to: move.to,
+      from: move.from,
+      promotion: move.promotion,
+    });
     if (!moveResult) {
       ws.send(
         JSON.stringify({
@@ -163,38 +221,84 @@ export class Game {
     this.fen = this.game.fen();
     this.turn = this.game.turn();
 
-    const gameStatus = {
-      capture: moveResult.captured || null,
-      promotion: moveResult.promotion || null,
-      draw: this.game.isDraw(),
-      threefold: this.game.isThreefoldRepetition(),
-      stalemate: this.game.isStalemate(),
-      check: this.game.isCheck(),
-      checkmate: this.game.isCheckmate(),
-    };
-
     const payload = {
       event: "MOVE_MADE",
       payload: {
         fen: this.fen,
         turn: this.turn,
-        timeWhite:
-          this.p1?.pieceColor === "w"
-            ? this.p1?.playerTime
-            : this.p2?.playerTime,
-        timeBlack:
-          this.p2?.pieceColor === "b"
-            ? this.p2?.playerTime
-            : this.p1?.playerTime,
-        ...gameStatus,
+        move: {
+          promotion: move.promotion,
+          to: move.to,
+          from: move.from,
+        },
+        isCapture: moveResult.captured || null,
+        isCheck: this.game.isCheck(),
+        isCheckmate: this.game.isCheckmate(),
+        isStalemate: this.game.isStalemate(),
+        promotion: moveResult.promotion || null,
       },
     };
 
-    if (gameStatus.checkmate || gameStatus.draw || gameStatus.stalemate) {
-      this.gameState = "finished";
+    const confirmationPayload = {
+      event: "MOVE_CONFIRMED",
+      payload: {
+        message: "Valid move",
+        move,
+      },
+    };
+
+    ws.send(JSON.stringify(confirmationPayload));
+
+    switch (true) {
+      case this.game.isCheckmate(): {
+        clearInterval(this.p1TimeIntervalId);
+        clearInterval(this.p2TimeIntervalId);
+        this.gameState = "finished";
+        const winnerColor = this.turn === "w" ? "b" : "w";
+
+        this.isGameOver = {
+          state: true,
+          reason: `${winnerColor === "w" ? "White" : "Black"} won the game by checkmate`,
+        };
+
+        this.broadcastMessage({
+          event: "GAME_OVER",
+          payload: {
+            message: `${winnerColor === "w" ? "White" : "Black"} won the game by checkmate`,
+          },
+        });
+        return;
+      }
+
+      case this.game.isDraw(): {
+        this.gameState = "finished";
+
+        let reason = "Game drawn";
+        if (this.game.isStalemate()) {
+          reason = "Game drawn by stalemate";
+        } else if (this.game.isThreefoldRepetition()) {
+          reason = "Game drawn by repetition";
+        } else if (this.game.isInsufficientMaterial()) {
+          reason = "Game drawn by insufficient material";
+        } else if (this.game.isDraw()) {
+          reason = "Game drawn (50-move rule or other condition)";
+        }
+
+        clearInterval(this.p1TimeIntervalId);
+        clearInterval(this.p2TimeIntervalId);
+        this.isGameOver = { state: true, reason };
+
+        this.broadcastMessage({
+          event: "GAME_OVER",
+          payload: { message: this.isGameOver.reason },
+        });
+        return;
+      }
+      default:
+        break;
     }
 
-    this.broadcastMessage(ws, payload);
+    this.broadcastToOthers(ws, payload);
     this.handleStartAndToggleTurn();
   }
 
@@ -208,8 +312,18 @@ export class Game {
     }
   }
 
-  private broadcastMessage(ws: WebSocket, data: any) {
+  private broadcastMessage(data: any) {
     const connectedPlayers = [this.p1?.ws, this.p2?.ws];
+    for (let player of connectedPlayers) {
+      if (player) {
+        player.send(JSON.stringify(data));
+      }
+    }
+  }
+
+  private broadcastToOthers(ws: WebSocket, data: any) {
+    const connectedPlayers = [this.p1?.ws, this.p2?.ws];
+
     for (let player of connectedPlayers) {
       if (player && player !== ws) {
         player.send(JSON.stringify(data));

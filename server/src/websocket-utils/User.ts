@@ -1,6 +1,5 @@
 import { WebSocket } from "ws";
 import { Game } from "./Game";
-import { PlayerColorType } from "../types/types";
 import { games } from "./initWebSocketServer";
 import { ZodError } from "zod";
 import { MessageSchema } from "../types/ws-types";
@@ -9,8 +8,6 @@ export class User {
   ws: WebSocket;
   username: string | undefined;
   inGame: string | undefined;
-  pieceColor: PlayerColorType;
-
   constructor(ws: WebSocket) {
     this.ws = ws;
     this.initHandlers();
@@ -60,7 +57,6 @@ export class User {
               // NOTE: temp username will verify jwt and get username from db
               username: payload.username,
               ws: this.ws,
-              pieceColor: payload.pieceColor,
             };
 
             if (isUserInGame(user)) {
@@ -75,7 +71,7 @@ export class User {
 
             if (games.size <= 0) {
               let newGame = new Game();
-              newGame.addPlayerOne(user);
+              newGame.addPlayerOne(user, this.ws);
               this.inGame = newGame.id;
 
               games.set(newGame.id, newGame);
@@ -90,36 +86,24 @@ export class User {
               }
 
               if (waitingGame) {
-                waitingGame.addPlayerTwo(user);
+                waitingGame.addPlayerTwo(user, this.ws);
 
                 this.inGame = waitingGame.id;
               } else {
                 const newGame = new Game();
-                newGame.addPlayerOne(user);
+                newGame.addPlayerOne(user, this.ws);
 
                 this.inGame = newGame.id;
                 games.set(newGame.id, newGame);
               }
             }
-
-            this.ws.send(
-              JSON.stringify({
-                event: "GAME_JOINED",
-                payload: {
-                  message: "you have joined the game",
-                  gameId: this.inGame,
-                },
-              })
-            );
           }
           break;
 
         case "MOVE_PIECE":
           {
             const { gameId } = payload;
-
             const game = games.get(gameId);
-
             game?.movePiece(this.ws, payload);
           }
           break;

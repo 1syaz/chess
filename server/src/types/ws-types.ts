@@ -10,7 +10,6 @@ export const JoinGameSchema = z.object({
   event: z.literal("JOIN_GAME"),
   payload: z.object({
     username: z.string(),
-    pieceColor: z.enum(["w", "b"]),
   }),
 });
 

@@ -6,7 +6,7 @@
     "build": "tsc",
     "dev": "dotenv nodemon",
     "test": "dotenv jest --watchAll",
-    "test:watch": "jest --watch",
+    "test:watch": "jest --watch --silent=false",
     "lint": "eslint",
     "lint fix": "eslint --fix"
   },

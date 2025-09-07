@@ -295,7 +295,6 @@ describe("WebSocket Server", () => {
                 event: "JOIN_GAME",
                 payload: {
                   username: "user1",
-                  pieceColor: "w",
                 },
               })
             );
@@ -303,10 +302,11 @@ describe("WebSocket Server", () => {
           ws1.onmessage = ({ data }) => {
             const { event, payload } = JSON.parse(data.toString());
 
-            expect(event).toBe("GAME_JOINED");
             expect(payload.message).toBe("you have joined the game");
+            expect(event).toBe("GAME_JOINED");
             activeGame = games.get(payload.gameId);
 
+            ws1.onmessage = null;
             resolve();
           };
         }),
@@ -318,7 +318,6 @@ describe("WebSocket Server", () => {
                 event: "JOIN_GAME",
                 payload: {
                   username: "user2",
-                  pieceColor: "b",
                 },
               })
             );
@@ -329,30 +328,30 @@ describe("WebSocket Server", () => {
             expect(event).toBe("GAME_JOINED");
             expect(payload.message).toBe("you have joined the game");
 
+            ws2.onmessage = null;
             resolve();
           };
         }),
       ]);
 
+      const gameId = activeGame?.id;
       const userOnTurn =
         activeGame?.turn === activeGame?.p1?.pieceColor ? ws1 : ws2;
-
       const playerWaitingForTurn =
         activeGame?.turn === activeGame?.p1?.pieceColor ? ws2 : ws1;
 
       await new Promise<void>((resolve) => {
-        playerWaitingForTurn.onmessage = ({ data }) => {
+        playerWaitingForTurn.addEventListener("message", ({ data }) => {
           const { event } = JSON.parse(data.toString());
-
           expect(event).toBe("MOVE_MADE");
-
           resolve();
-        };
+        });
+
         userOnTurn.send(
           JSON.stringify({
             event: "MOVE_PIECE",
             payload: {
-              gameId: "12345",
+              gameId: gameId,
               move: {
                 promotion: "",
                 from: "e2",
