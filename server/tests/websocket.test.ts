@@ -217,7 +217,6 @@ describe("WebSocket Server", () => {
                 event: "JOIN_GAME",
                 payload: {
                   username: "user1",
-                  pieceColor: "w",
                 },
               })
             );
@@ -228,6 +227,7 @@ describe("WebSocket Server", () => {
             expect(event).toBe("GAME_JOINED");
             expect(payload.message).toBe("you have joined the game");
             activeGame = games.get(payload.gameId);
+            ws1.onmessage = null;
 
             resolve();
           };
@@ -240,7 +240,6 @@ describe("WebSocket Server", () => {
                 event: "JOIN_GAME",
                 payload: {
                   username: "user2",
-                  pieceColor: "b",
                 },
               })
             );
@@ -250,6 +249,7 @@ describe("WebSocket Server", () => {
 
             expect(event).toBe("GAME_JOINED");
             expect(payload.message).toBe("you have joined the game");
+            ws1.onmessage = null;
 
             resolve();
           };
@@ -273,6 +273,7 @@ describe("WebSocket Server", () => {
             event: "MOVE_PIECE",
             payload: {
               gameId: "12345",
+              pieceColor: "w",
               move: {
                 promotion: "",
                 from: "e2",
@@ -352,6 +353,7 @@ describe("WebSocket Server", () => {
             event: "MOVE_PIECE",
             payload: {
               gameId: gameId,
+              pieceColor: "w",
               move: {
                 promotion: "",
                 from: "e2",

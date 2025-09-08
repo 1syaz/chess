@@ -16,9 +16,7 @@ export class Game {
   p2: IPlayer | undefined;
   // id: string = uuidv4();
   id: string = "12345";
-  game: Chess = new Chess(
-    "rnbqkbnr/ppppp3/6pp/5p1Q/4P3/3P4/PPP2PPP/RNB1KBNR w KQkq - 0 4"
-  );
+  game: Chess = new Chess();
   fen: string = this.game.fen();
   turn: PlayerColorType;
   spectators: WebSocket[] = [];
@@ -65,7 +63,6 @@ export class Game {
     this.p2.pieceColor = this.p1?.pieceColor === "w" ? "b" : "w";
     this.gameState = "in-progress";
     this.p2.playerTime = this.gameTime;
-    console.log("added player two shoudl run timer");
     this.handleStartAndToggleTurn();
 
     playerWs.send(
@@ -113,7 +110,6 @@ export class Game {
       this.p2TimeIntervalId && clearInterval(this.p2TimeIntervalId);
       this.p1TimeIntervalId = setInterval(() => {
         this.p1!.playerTime = this.p1?.playerTime! - 1000;
-        console.log(this.p1?.playerTime);
 
         if (this.p1?.playerTime! <= 0) {
           clearInterval(this.p1TimeIntervalId);
@@ -136,7 +132,6 @@ export class Game {
       this.p1TimeIntervalId && clearInterval(this.p1TimeIntervalId);
       this.p2TimeIntervalId = setInterval(() => {
         this.p2!.playerTime = this.p2?.playerTime! - 1000;
-        console.log(this.p1?.playerTime);
 
         if (this.p2?.playerTime! <= 0) {
           clearInterval(this.p2TimeIntervalId);
