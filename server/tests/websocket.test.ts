@@ -364,5 +364,327 @@ describe("WebSocket Server", () => {
         );
       });
     });
+
+    it("should handle wrong player moves out of turn", async () => {
+      let activeGame: Game | undefined;
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          ws1.onopen = () => {
+            ws1.send(
+              JSON.stringify({
+                event: "JOIN_GAME",
+                payload: {
+                  username: "user1",
+                },
+              })
+            );
+          };
+
+          ws1.onmessage = ({ data }) => {
+            const { event } = JSON.parse(data.toString());
+
+            expect(event).toBe("GAME_JOINED");
+            ws1.onmessage = null;
+            resolve();
+          };
+        }),
+
+        new Promise<void>((resolve) => {
+          ws2.onopen = () => {
+            ws2.send(
+              JSON.stringify({
+                event: "JOIN_GAME",
+                payload: {
+                  username: "user2",
+                },
+              })
+            );
+          };
+
+          ws2.onmessage = ({ data }) => {
+            const { event, payload } = JSON.parse(data.toString());
+
+            expect(event).toBe("GAME_JOINED");
+            activeGame = games.get(payload.gameId);
+            ws2.onmessage = null;
+            resolve();
+          };
+        }),
+      ]);
+
+      const playerWaitingForTurn =
+        activeGame?.p1?.pieceColor === "w" ? ws2 : ws1;
+
+      await new Promise<void>((resolve) => {
+        playerWaitingForTurn.onmessage = ({ data }) => {
+          const { event, payload } = JSON.parse(data.toString());
+
+          expect(event).toBe("ERROR");
+          expect(payload.message).toBe("Not your turn yet");
+          resolve();
+        };
+
+        playerWaitingForTurn.send(
+          JSON.stringify({
+            event: "MOVE_PIECE",
+            payload: {
+              gameId: "12345",
+              pieceColor: "b",
+              move: {
+                promotion: "",
+                to: "e4",
+                from: "e2",
+              },
+            },
+          })
+        );
+      });
+    });
+  });
+
+  // ------------------------
+  // END_GAME
+  // ------------------------
+
+  it("should handle stalemate", async () => {
+    let playerOnTurn: WebSocket;
+    let fen = "7k/5K2/8/5Q2/8/8/8/8 w - - 16 9";
+
+    await Promise.all([
+      new Promise<void>((resolve) => {
+        ws1.onopen = () => {
+          ws1.send(
+            JSON.stringify({
+              event: "JOIN_GAME",
+              payload: {
+                username: "user1",
+                fen: "7k/5K2/8/5Q2/8/8/8/8 w - - 16 9",
+              },
+            })
+          );
+        };
+
+        ws1.onmessage = ({ data }) => {
+          const { event } = JSON.parse(data.toString());
+
+          expect(event).toBe("GAME_JOINED");
+          ws1.onmessage = null;
+          resolve();
+        };
+      }),
+
+      new Promise<void>((resolve) => {
+        ws2.onopen = () => {
+          ws2.send(
+            JSON.stringify({
+              event: "JOIN_GAME",
+              payload: {
+                username: "user2",
+              },
+            })
+          );
+        };
+
+        ws2.onmessage = ({ data }) => {
+          const { event, payload } = JSON.parse(data.toString());
+
+          expect(event).toBe("GAME_JOINED");
+
+          const activeColor = fen.split(" ")[1]; // "w" or "b"
+          playerOnTurn =
+            activeColor === "w"
+              ? payload.pieceColor === "w"
+                ? ws2
+                : ws1
+              : payload.pieceColor === "b"
+                ? ws2
+                : ws1;
+          ws2.onmessage = null;
+          resolve();
+        };
+      }),
+    ]);
+
+    await new Promise<void>((resolve) => {
+      playerOnTurn.onmessage = ({ data }) => {
+        const { event, payload } = JSON.parse(data.toString());
+
+        expect(event).toBe("GAME_OVER");
+        expect(payload.message).toBe("Game drawn by stalemate");
+        resolve();
+      };
+
+      playerOnTurn.send(
+        JSON.stringify({
+          event: "MOVE_PIECE",
+          payload: {
+            pieceColor: "w",
+            gameId: "12345",
+            move: {
+              promotion: "",
+              from: "f5",
+              to: "g6",
+            },
+          },
+        })
+      );
+    });
+  });
+
+  it("should handle checkmate", async () => {
+    let playerOnTurn: WebSocket;
+    let fen = "7k/5K2/8/5Q2/8/8/8/8 w - - 16 9";
+
+    await Promise.all([
+      new Promise<void>((resolve) => {
+        ws1.onopen = () => {
+          ws1.send(
+            JSON.stringify({
+              event: "JOIN_GAME",
+              payload: {
+                username: "user1",
+                fen: "7k/5K2/8/5Q2/8/8/8/8 w - - 16 9",
+              },
+            })
+          );
+        };
+
+        ws1.onmessage = ({ data }) => {
+          const { event } = JSON.parse(data.toString());
+
+          expect(event).toBe("GAME_JOINED");
+          ws1.onmessage = null;
+          resolve();
+        };
+      }),
+
+      new Promise<void>((resolve) => {
+        ws2.onopen = () => {
+          ws2.send(
+            JSON.stringify({
+              event: "JOIN_GAME",
+              payload: {
+                username: "user2",
+              },
+            })
+          );
+        };
+
+        ws2.onmessage = ({ data }) => {
+          const { event, payload } = JSON.parse(data.toString());
+
+          expect(event).toBe("GAME_JOINED");
+
+          const activeColor = fen.split(" ")[1]; // "w" or "b"
+          playerOnTurn =
+            activeColor === "w"
+              ? payload.pieceColor === "w"
+                ? ws2
+                : ws1
+              : payload.pieceColor === "b"
+                ? ws2
+                : ws1;
+          ws2.onmessage = null;
+          resolve();
+        };
+      }),
+    ]);
+
+    await new Promise<void>((resolve) => {
+      playerOnTurn.onmessage = ({ data }) => {
+        const { event, payload } = JSON.parse(data.toString());
+
+        expect(event).toBe("GAME_OVER");
+        expect(payload.message).toBe("White won the game by checkmate");
+        resolve();
+      };
+
+      playerOnTurn.send(
+        JSON.stringify({
+          event: "MOVE_PIECE",
+          payload: {
+            pieceColor: "w",
+            gameId: "12345",
+            move: {
+              promotion: "",
+              from: "f5",
+              to: "h3",
+            },
+          },
+        })
+      );
+    });
+  });
+
+  it("should handle insufficient material", async () => {
+    let playerOnTurn: WebSocket;
+    let fen = "8/8/8/3k4/8/8/3Kq3/8 w - - 0 1";
+
+    await Promise.all([
+      new Promise<void>((resolve) => {
+        ws1.onopen = () => {
+          ws1.send(
+            JSON.stringify({
+              event: "JOIN_GAME",
+              payload: { username: "user1", fen },
+            })
+          );
+        };
+
+        ws1.onmessage = ({ data }) => {
+          expect(JSON.parse(data.toString()).event).toBe("GAME_JOINED");
+          ws1.onmessage = null;
+          resolve();
+        };
+      }),
+      new Promise<void>((resolve) => {
+        ws2.onopen = () => {
+          ws2.send(
+            JSON.stringify({
+              event: "JOIN_GAME",
+              payload: { username: "user2" },
+            })
+          );
+        };
+
+        ws2.onmessage = ({ data }) => {
+          const { event, payload } = JSON.parse(data.toString());
+          expect(event).toBe("GAME_JOINED");
+
+          const activeColor = fen.split(" ")[1];
+          playerOnTurn =
+            activeColor === "w"
+              ? payload.pieceColor === "w"
+                ? ws2
+                : ws1
+              : payload.pieceColor === "b"
+                ? ws2
+                : ws1;
+
+          ws2.onmessage = null;
+          resolve();
+        };
+      }),
+    ]);
+
+    await new Promise<void>((resolve) => {
+      playerOnTurn.onmessage = ({ data }) => {
+        const { event, payload } = JSON.parse(data.toString());
+        expect(event).toBe("GAME_OVER");
+        expect(payload.message).toBe("Game drawn by insufficient material");
+        resolve();
+      };
+
+      playerOnTurn.send(
+        JSON.stringify({
+          event: "MOVE_PIECE",
+          payload: {
+            pieceColor: "w",
+            gameId: "12345",
+            move: { promotion: "", from: "d2", to: "e2" },
+          },
+        })
+      );
+    });
   });
 });

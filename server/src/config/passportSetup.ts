@@ -10,9 +10,9 @@ passport.use(
       clientID: config.GOOGLE_CLIENT_ID,
       clientSecret: config.GOOGLE_CLIENT_SECRET,
       callbackURL:
-        config.DEV_ENV === "development"
-          ? `${config.DEV_CLIENT_URL}/api/v1/users/google/callback`
-          : `${config.PROD_CLIENT_URL}/api/v1/users/google/callback`,
+        config.NODE_ENV === "dev"
+          ? `${config.FRONTEND_URL}/api/v1/users/google/callback`
+          : `${config.PROD_FRONTEND_URL}/api/v1/users/google/callback`,
       scope: ["profile", "email"],
     },
     async (_accessToken, _refreshToken, profile, done) => {

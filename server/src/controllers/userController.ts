@@ -116,7 +116,7 @@ async function handleGoogleLogin(req: Request, res: Response) {
 
   if (!user) {
     const redirectUrl =
-      config.DEV_ENV === "development"
+      config.NODE_ENV === "dev"
         ? `${config.FRONTEND_URL}/login?error=Something_went_wrong_while_logging_in`
         : `${config.PROD_FRONTEND_URL}/login?error=Something_went_wrong_while_logging_in`;
     return res.redirect(redirectUrl);
@@ -132,7 +132,7 @@ async function handleGoogleLogin(req: Request, res: Response) {
   res.cookie("refreshToken", refreshToken, refreshTokenOptions);
 
   const redirectUrl =
-    config.DEV_ENV === "development"
+    config.NODE_ENV === "dev"
       ? `${config.FRONTEND_URL}/play`
       : `${config.PROD_FRONTEND_URL}/play`;
 

@@ -30,8 +30,9 @@ export class Game {
   private p1TimeIntervalId: NodeJS.Timeout | undefined = undefined;
   private p2TimeIntervalId: NodeJS.Timeout | undefined = undefined;
 
-  constructor(gameTime: number = 20000) {
+  constructor(gameTime: number = 20000, fen?: string) {
     this.gameTime = gameTime;
+    this.game = fen ? new Chess(fen) : new Chess();
   }
 
   addPlayerOne(
@@ -234,16 +235,6 @@ export class Game {
       },
     };
 
-    const confirmationPayload = {
-      event: "MOVE_CONFIRMED",
-      payload: {
-        message: "Valid move",
-        move,
-      },
-    };
-
-    ws.send(JSON.stringify(confirmationPayload));
-
     switch (true) {
       case this.game.isCheckmate(): {
         clearInterval(this.p1TimeIntervalId);
@@ -276,7 +267,7 @@ export class Game {
         } else if (this.game.isInsufficientMaterial()) {
           reason = "Game drawn by insufficient material";
         } else if (this.game.isDraw()) {
-          reason = "Game drawn (50-move rule or other condition)";
+          reason = "Game drawn";
         }
 
         clearInterval(this.p1TimeIntervalId);
@@ -293,6 +284,15 @@ export class Game {
         break;
     }
 
+    const confirmationPayload = {
+      event: "MOVE_CONFIRMED",
+      payload: {
+        message: "Valid move",
+        move,
+      },
+    };
+
+    ws.send(JSON.stringify(confirmationPayload));
     this.broadcastToOthers(ws, payload);
     this.handleStartAndToggleTurn();
   }

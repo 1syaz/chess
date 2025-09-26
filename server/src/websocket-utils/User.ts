@@ -3,6 +3,7 @@ import { Game } from "./Game";
 import { games } from "./initWebSocketServer";
 import { ZodError } from "zod";
 import { MessageSchema } from "../types/ws-types";
+import config from "../config/config";
 
 export class User {
   ws: WebSocket;
@@ -41,60 +42,131 @@ export class User {
       switch (event) {
         case "JOIN_GAME":
           {
-            const isUserInGame = (user: any) => {
-              for (let game of games.values()) {
-                if (
-                  game.p1?.username === user.username ||
-                  game.p2?.username === user.username
-                ) {
-                  return true;
+            const { username, fen } = payload;
+
+            if (config.NODE_ENV === "test") {
+              const isUserInGame = (user: any) => {
+                for (let game of games.values()) {
+                  if (
+                    game.p1?.username === user.username ||
+                    game.p2?.username === user.username
+                  ) {
+                    return true;
+                  }
                 }
-              }
-              return false;
-            };
+                return false;
+              };
 
-            const user = {
-              // NOTE: temp username will verify jwt and get username from db
-              username: payload.username,
-              ws: this.ws,
-            };
+              const user = {
+                // NOTE: temp username will verify jwt and get username from db
+                username: username,
+                ws: this.ws,
+              };
 
-            if (isUserInGame(user)) {
-              this.ws.send(
-                JSON.stringify({
-                  event: "ERROR",
-                  payload: { message: "Already in game" },
-                })
-              );
-              return;
-            }
-
-            if (games.size <= 0) {
-              let newGame = new Game();
-              newGame.addPlayerOne(user, this.ws);
-              this.inGame = newGame.id;
-
-              games.set(newGame.id, newGame);
-            } else {
-              // check for games with waiting state
-              let waitingGame: Game | undefined;
-              for (let game of games.values()) {
-                if (game.gameState === "waiting") {
-                  waitingGame = game;
-                  break;
-                }
+              if (isUserInGame(user)) {
+                this.ws.send(
+                  JSON.stringify({
+                    event: "ERROR",
+                    payload: { message: "Already in game" },
+                  })
+                );
+                return;
               }
 
-              if (waitingGame) {
-                waitingGame.addPlayerTwo(user, this.ws);
-
-                this.inGame = waitingGame.id;
-              } else {
-                const newGame = new Game();
+              if (games.size <= 0) {
+                let newGame = fen ? new Game(undefined, fen) : new Game();
                 newGame.addPlayerOne(user, this.ws);
-
                 this.inGame = newGame.id;
+
                 games.set(newGame.id, newGame);
+              } else {
+                // check for games with waiting state
+                let waitingGame: Game | undefined;
+                for (let game of games.values()) {
+                  if (game.gameState === "waiting") {
+                    waitingGame = game;
+                    break;
+                  }
+                }
+
+                if (waitingGame) {
+                  waitingGame.addPlayerTwo(user, this.ws);
+
+                  this.inGame = waitingGame.id;
+                } else {
+                  const newGame = fen ? new Game(fen) : new Game();
+                  newGame.addPlayerOne(user, this.ws);
+
+                  this.inGame = newGame.id;
+                  games.set(newGame.id, newGame);
+                }
+              }
+            } else {
+              if (fen) {
+                this.ws.send(
+                  JSON.stringify({
+                    event: "ERROR",
+                    payload: { message: "FEN payload is not allowed" },
+                  })
+                );
+                return;
+              }
+
+              const isUserInGame = (user: any) => {
+                for (let game of games.values()) {
+                  if (
+                    game.p1?.username === user.username ||
+                    game.p2?.username === user.username
+                  ) {
+                    return true;
+                  }
+                }
+                return false;
+              };
+
+              const user = {
+                // NOTE: temp username will verify jwt and get username from db
+                username: username,
+                ws: this.ws,
+              };
+
+              if (isUserInGame(user)) {
+                this.ws.send(
+                  JSON.stringify({
+                    event: "ERROR",
+                    payload: { message: "Already in game" },
+                  })
+                );
+                return;
+              }
+
+              if (games.size <= 0) {
+                let newGame = new Game();
+                newGame.addPlayerOne(user, this.ws);
+                this.inGame = newGame.id;
+
+                games.set(newGame.id, newGame);
+              } else {
+                // check for games with waiting state
+                let waitingGame: Game | undefined;
+                for (let game of games.values()) {
+                  if (game.gameState === "waiting") {
+                    waitingGame = game;
+                    break;
+                  }
+                }
+
+                if (waitingGame) {
+                  waitingGame.addPlayerTwo(user, this.ws);
+
+                  this.inGame = waitingGame.id;
+                } else {
+                  const newGame = new Game();
+                  newGame.addPlayerOne(user, this.ws);
+
+                  this.inGame = newGame.id;
+                  games.set(newGame.id, newGame);
+                }
               }
             }
           }

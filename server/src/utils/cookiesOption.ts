@@ -3,8 +3,8 @@ import config from "../config/config";
 
 const baseOptions: CookieOptions = {
   httpOnly: true,
-  secure: config.DEV_ENV === "production",
-  sameSite: config.DEV_ENV === "production" ? "none" : "lax",
+  secure: config.NODE_ENV === "prod",
+  sameSite: config.NODE_ENV === "prod" ? "none" : "lax",
 };
 
 export const accessTokenOptions: CookieOptions = {
