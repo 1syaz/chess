@@ -442,6 +442,9 @@ describe("WebSocket Server", () => {
     });
   });
 
+  // TODO: write test for  handle promotion
+  // 3k4/P3r3/5n2/8/8/8/3K4/3R4 w - - 0 1
+
   // ------------------------
   // END_GAME
   // ------------------------

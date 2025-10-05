@@ -30,7 +30,7 @@ function FeatureSection() {
         transition={{ delay: 0.6 }}
         className="text-center mb-20"
       >
-        <div className="space-y-4 mb-12">
+        <div className="space-y-4 mb-12 ">
           <p className="text-mint-green font-semibold text-sm uppercase tracking-wide">
             FEATURES
           </p>

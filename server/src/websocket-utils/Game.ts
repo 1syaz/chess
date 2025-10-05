@@ -30,7 +30,7 @@ export class Game {
   private p1TimeIntervalId: NodeJS.Timeout | undefined = undefined;
   private p2TimeIntervalId: NodeJS.Timeout | undefined = undefined;
 
-  constructor(gameTime: number = 20000, fen?: string) {
+  constructor(gameTime: number = 200000, fen?: string) {
     this.gameTime = gameTime;
     this.game = fen ? new Chess(fen) : new Chess();
   }

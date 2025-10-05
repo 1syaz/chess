@@ -33,7 +33,7 @@ function PlayerPanel({
   if (!player1 || !player2) return null;
 
   return (
-    <div className="flex flex-row lg:flex-col justify-between  gap-4 border bg-custom-grey border-white/20 rounded-lg p-4">
+    <div className=" flex flex-row lg:flex-col justify-between  gap-4 border bg-custom-grey border-white/20 rounded-lg p-4">
       {[player1, player2].map((player) => {
         return <PlayerDisplay key={player.color} player={player} />;
       })}
