@@ -442,8 +442,109 @@ describe("WebSocket Server", () => {
     });
   });
 
-  // TODO: write test for  handle promotion
-  // 3k4/P3r3/5n2/8/8/8/3K4/3R4 w - - 0 1
+  it("should handle promotion", async () => {
+    let playerOnTurn: WebSocket;
+    let playerWaitingForTurn: WebSocket;
+    let fen = "3k4/P3r3/5n2/8/8/8/3K4/3R4 w - - 0 1";
+
+    await Promise.all([
+      new Promise<void>((resolve) => {
+        ws1.onopen = () => {
+          ws1.send(
+            JSON.stringify({
+              event: "JOIN_GAME",
+              payload: {
+                username: "user1",
+                fen: "3k4/P3r3/5n2/8/8/8/3K4/3R4 w - - 0 1",
+              },
+            })
+          );
+        };
+
+        ws1.onmessage = ({ data }) => {
+          const { event } = JSON.parse(data.toString());
+
+          expect(event).toBe("GAME_JOINED");
+          ws1.onmessage = null;
+          resolve();
+        };
+      }),
+
+      new Promise<void>((resolve) => {
+        ws2.onopen = () => {
+          ws2.send(
+            JSON.stringify({
+              event: "JOIN_GAME",
+              payload: {
+                username: "user2",
+              },
+            })
+          );
+        };
+
+        ws2.onmessage = ({ data }) => {
+          const { event, payload } = JSON.parse(data.toString());
+
+          expect(event).toBe("GAME_JOINED");
+
+          const activeColor = fen.split(" ")[1]; // "w" or "b"
+          playerOnTurn =
+            activeColor === "w"
+              ? payload.pieceColor === "w"
+                ? ws2
+                : ws1
+              : payload.pieceColor === "b"
+                ? ws2
+                : ws1;
+          playerWaitingForTurn =
+            activeColor === "w"
+              ? payload.pieceColor === "w"
+                ? ws1
+                : ws2
+              : payload.pieceColor === "b"
+                ? ws1
+                : ws2;
+          ws2.onmessage = null;
+          resolve();
+        };
+      }),
+    ]);
+
+    await new Promise<void>((resolve) => {
+      playerOnTurn.send(
+        JSON.stringify({
+          event: "MOVE_PIECE",
+          payload: {
+            pieceColor: "w",
+            gameId: "12345",
+            move: {
+              promotion: "q",
+              from: "a7",
+              to: "a8",
+            },
+          },
+        })
+      );
+      playerOnTurn.onmessage = ({ data }) => {
+        const { event, payload } = JSON.parse(data.toString());
+
+        expect(event).toBe("MOVE_CONFIRMED");
+        expect(payload.message).toBe("Valid move");
+
+        playerWaitingForTurn.onmessage = ({ data }) => {
+          const { event, payload } = JSON.parse(data.toString());
+
+          expect(event).toBe("MOVE_MADE");
+          expect(payload.move).toStrictEqual({
+            promotion: "q",
+            to: "a8",
+            from: "a7",
+          });
+          resolve();
+        };
+      };
+    });
+  });
 
   // ------------------------
   // END_GAME

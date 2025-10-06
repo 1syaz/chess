@@ -1,6 +1,6 @@
-import { Chess } from "chess.js";
 import { WebSocket } from "ws";
 import { PlayerColorType } from "../types/types";
+import { Chess } from "chess.js";
 
 interface IPlayer {
   username: string;
